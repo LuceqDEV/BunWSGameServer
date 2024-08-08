@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Benchmark</title>
+  <style>
+    #status {
+      color: green;
+    }
+    #info {
+      margin-top: 10px;
+    }
+    #finalMessage {
+      margin-top: 20px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Benchmark</h1>
+  <button id="start">Start Benchmark</button>
+  <button id="stop">Stop Benchmark</button>
+  <p id="status">Status: Idle</p>
+  <p id="info"></p>
+  <p id="finalMessage"></p> <!-- Novo elemento para a mensagem final -->
+
+  <script>
+    const SERVER_URL = 'ws://localhost:8080';
+    const CLIENTS_COUNT = 100;
+    const TOTAL_MESSAGES = 100000; // Total de mensagens a serem enviadas
+    const MESSAGES = [
+      "Hello World!",
+      "Hello World! 1",
+      "Hello World! 2",
+      "Hello World! 3",
+      "Hello World! 4",
+      "Hello World! 5",
+      "Hello World! 6",
+      "Hello World! 7",
+      "Hello World! 8",
+      "Hello World! 9",
+      "What is the meaning of life?",
+      "where is the bathroom?",
+      "zoo",
+      "kangaroo",
+      "erlang",
+      "elixir",
+      "bun",
+      "mochi",
+      "typescript",
+      "javascript"
+    ];
+
+    let clients = [];
+    let messagesSent = 0;
+    let messagesReceived = 0;
+    let benchmarkRunning = false;
+    let benchmarkInterval;
+    let lastReceived = 0;
+    let startTime;
+    let endTime;
+
+    function startBenchmark() {
+      if (benchmarkRunning) return;
+
+      benchmarkRunning = true;
+      startTime = Date.now(); // Início do temporizador
+      document.getElementById('status').textContent = 'Status: Benchmark Running';
+      document.getElementById('info').textContent = 'Connecting clients...';
+
+      // Connect clients
+      for (let i = 0; i < CLIENTS_COUNT; i++) {
+        const ws = new WebSocket(SERVER_URL);
+        ws.onopen = () => {
+          ws.send(`Client${i} connected`);
+        };
+        ws.onmessage = () => {
+          messagesReceived++;
+        };
+        ws.onerror = (error) => {
+          console.error('WebSocket Error:', error);
+        };
+        ws.onclose = () => {
+          console.log('WebSocket closed');
+        };
+        clients.push(ws);
+      }
+
+      // Start sending messages
+      benchmarkInterval = setInterval(() => {
+        if (clients.length === 0 || messagesSent >= TOTAL_MESSAGES) {
+          stopBenchmark(); // Stop benchmark when total messages are sent
+          return;
+        }
+
+        clients.forEach(client => {
+          MESSAGES.forEach(message => {
+            if (messagesSent < TOTAL_MESSAGES) {
+              client.send(message);
+              messagesSent++;
+            }
+          });
+        });
+
+        document.getElementById('info').textContent = `Messages Sent: ${messagesSent}, Messages Received: ${messagesReceived}`;
+      }, 1000);
+
+      const updateMetrics = () => {
+        const currentReceived = messagesReceived;
+        const receivedPerSecond = currentReceived - lastReceived;
+        lastReceived = currentReceived;
+
+        document.getElementById('info').textContent = `Messages Sent: ${messagesSent}, Messages Received per second: ${receivedPerSecond}`;
+      };
+
+      setInterval(updateMetrics, 1000);
+    }
+
+    function stopBenchmark() {
+      if (!benchmarkRunning) return;
+
+      benchmarkRunning = false;
+      endTime = Date.now();
+      const totalTimeMs = endTime - startTime; // Tempo total em milissegundos
+      document.getElementById('status').textContent = 'Status: Benchmark Stopped';
+
+      clients.forEach(client => {
+        client.close();
+      });
+      clients = [];
+
+      clearInterval(benchmarkInterval);
+
+      // Atualiza o elemento 'finalMessage' com a mensagem final
+      document.getElementById('finalMessage').textContent = `Benchmark finalizado! Mensagens enviadas: ${messagesSent}, Tempo total: ${totalTimeMs} ms`;
+
+      // Limpa o elemento 'info' para evitar sobrecarga de informações
+      document.getElementById('info').textContent = '';
+    }
+
+    document.getElementById('start').addEventListener('click', startBenchmark);
+    document.getElementById('stop').addEventListener('click', stopBenchmark);
+  </script>
+</body>
+</html>
