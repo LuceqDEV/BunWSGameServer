@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+    <button id="sendPing" disabled>Send Ping</button>
+    <div id="status">Disconnected</div>
+
+    <script>
+        class ByteBuffer {
+            constructor() {
+                this.buffer = new ArrayBuffer(1024); // Initial buffer size
+                this.view = new DataView(this.buffer);
+                this.offset = 0;
+            }
+
+            putInt32(value) {
+                this.view.setInt32(this.offset, value, true);
+                this.offset += 4;
+            }
+
+            putInt16(value) {
+                this.view.setInt16(this.offset, value, true);
+                this.offset += 2;
+            }
+
+            putBytes(bytes) {
+                new Uint8Array(this.buffer, this.offset, bytes.length).set(bytes);
+                this.offset += bytes.length;
+            }
+
+            getBytes() {
+                return new Uint8Array(this.buffer, 0, this.offset);
+            }
+
+            getInt32() {
+                const value = this.view.getInt32(this.offset, true);
+                this.offset += 4;
+                return value;
+            }
+
+            getInt16() {
+                const value = this.view.getInt16(this.offset, true);
+                this.offset += 2;
+                return value;
+            }
+
+            getBytesLength(length) {
+                const bytes = new Uint8Array(this.buffer, this.offset, length);
+                this.offset += length;
+                return bytes;
+            }
+        }
+
+        class Packet {
+            constructor(id, content) {
+                this.id = id;
+                this.content = content;
+            }
+
+            static fromByteBuffer(buffer) {
+                const size = buffer.getInt32();
+                const id = buffer.getInt16();
+                const content = buffer.getBytesLength(size);
+                return new Packet(id, content);
+            }
+
+            toByteBuffer() {
+                const buffer = new ByteBuffer();
+                buffer.putInt32(this.content.length);
+                buffer.putInt16(this.id);
+                buffer.putBytes(this.content);
+                return buffer;
+            }
+        }
+
+        let ws;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const connectButton = document.getElementById('connect');
+            const disconnectButton = document.getElementById('disconnect');
+            const sendPingButton = document.getElementById('sendPing');
+            const statusDiv = document.getElementById('status');
+
+            connectButton.addEventListener('click', () => {
+                if (!ws || ws.readyState === WebSocket.CLOSED) {
+                    ws = new WebSocket('ws://localhost:8080');
+
+                    ws.onopen = () => {
+                        statusDiv.textContent = 'Connected';
+                        statusDiv.style.color = 'green';
+                        connectButton.disabled = true;
+                        disconnectButton.disabled = false;
+                        sendPingButton.disabled = false;
+                    };
+
+                    ws.onmessage = (event) => {
+                        console.log('Message from server:', event.data);
+                    };
+
+                    ws.onclose = () => {
+                        statusDiv.textContent = 'Disconnected';
+                        statusDiv.style.color = 'red';
+                        connectButton.disabled = false;
+                        disconnectButton.disabled = true;
+                        sendPingButton.disabled = true;
+                    };
+
+                    ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        statusDiv.textContent = 'Error';
+                        statusDiv.style.color = 'orange';
+                        connectButton.disabled = false;
+                        disconnectButton.disabled = true;
+                        sendPingButton.disabled = true;
+                    };
+                }
+            });
+
+            disconnectButton.addEventListener('click', () => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.close();
+                }
+            });
+
+            sendPingButton.addEventListener('click', () => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const packet = new Packet(0, new Uint8Array()); // ID 0, empty content
+                    const byteBuffer = packet.toByteBuffer();
+                    ws.send(byteBuffer.getBytes());
+                }
+            });
+        });
+    </script>
+</body>
+</html>
