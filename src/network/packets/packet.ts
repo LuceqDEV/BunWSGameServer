@@ -9,6 +9,7 @@ export class Packet {
     }
 
     public static fromByteBuffer(buffer: ByteBuffer): Packet {
+        console.log(buffer.getBuffer())
         // Obtém o tamanho do conteúdo do pacote (4 bytes)
         const size = buffer.getInt32();
 

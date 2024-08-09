@@ -1,11 +1,9 @@
 export enum ClientHeaders {
     ping,
-
-    length
+    chat,
 }
 
 export enum ServerHeaders {
     ping,
-
-    length
+    chat,
 }

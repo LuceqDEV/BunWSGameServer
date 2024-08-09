@@ -6,8 +6,9 @@ import { IpConverter } from "../../shared/ipconverter";
 import { Processor } from "../packets/processor";
 import { ByteBuffer } from "../buffers/byte_buffer";
 import { Packet } from "../packets/packet";
-import { ServerHeaders } from "./headers";
-import { Sender } from "../packets/sender";
+import { ClientHeaders, ServerHeaders } from "./headers";
+import { PingPacket } from "./messages/ping_message";
+import { ChatPacket } from "./messages/chat_message";
 
 export class Handler {
     private _logger: Logger;
@@ -19,7 +20,12 @@ export class Handler {
         this._memory = Memory.get();
         this._packetProcessor = new Processor();
 
-        this._packetProcessor.registerHandler(0, this.testePacote.bind(this));
+        this._packetProcessor.registerHandler(ClientHeaders.ping, (ws, packet) => new PingPacket().handle(ws, packet));
+        this._packetProcessor.registerHandler(ClientHeaders.chat, (ws, packet) => {
+            const chatPacket = ChatPacket.fromPacket(packet);
+            chatPacket.handle(ws, packet);
+        });
+
     }
 
     public websocketOpen(ws: ServerWebSocket): void {
@@ -44,7 +50,6 @@ export class Handler {
             const byteBuffer = new ByteBuffer();
             byteBuffer.putBytes(message);
 
-            // Processar pacotes recebidos
             const packet = Packet.fromByteBuffer(byteBuffer);
             this._packetProcessor.handlePacket(ws, packet);
 
@@ -76,16 +81,5 @@ export class Handler {
                 break;
             }
         }
-    }
-
-    private testePacote(ws: ServerWebSocket, packet: Packet): void {
-        this._logger.info(`Recebido pacote de ping`);
-
-        this.sendPingPacket(ws);
-    }
-
-    private sendPingPacket(ws: ServerWebSocket): void {
-        const pingPacket = new Packet(ServerHeaders.ping, new Buffer(''));
-        Sender.dataTo(ws, pingPacket);
     }
 }
