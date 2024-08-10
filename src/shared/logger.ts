@@ -6,34 +6,34 @@ const BLUE = 34;
 const RED = 31;
 
 export class Logger {
-    private static _instance: Logger;
+  private static _instance: Logger;
 
-    private constructor() { }
+  private constructor() {}
 
-    public static get(): Logger {
-        if (!Logger._instance) {
-            Logger._instance = new Logger();
-        }
-        return Logger._instance;
+  public static get(): Logger {
+    if (!Logger._instance) {
+      Logger._instance = new Logger();
     }
+    return Logger._instance;
+  }
 
-    private getTimestamp() {
-        return new Date().toLocaleString();
-    }
+  private _getTimestamp(): string {
+    return new Date().toLocaleString();
+  }
 
-    public info(message: string) {
-        console.log(`${colorText('[INFO]', GREEN)} ${this.getTimestamp()} - ${colorText(message, GREEN)}`);
-    }
+  public info(message: string): void {
+    console.log(`${colorText("[INFO]", GREEN)} ${this._getTimestamp()} - ${colorText(message, GREEN)}`);
+  }
 
-    public warning(message: string) {
-        console.log(`${colorText('[WARN]', YELLOW)} ${this.getTimestamp()} - ${colorText(message, YELLOW)}`);
-    }
+  public warning(message: string): void {
+    console.log(`${colorText("[WARN]", YELLOW)} ${this._getTimestamp()} - ${colorText(message, YELLOW)}`);
+  }
 
-    public player(message: string) {
-        console.log(`${colorText('[PLAYER]', BLUE)} ${this.getTimestamp()} - ${colorText(message, BLUE)}`);
-    }
+  public player(message: string): void {
+    console.log(`${colorText("[PLAYER]", BLUE)} ${this._getTimestamp()} - ${colorText(message, BLUE)}`);
+  }
 
-    public error(message: string) {
-        console.log(`${colorText('[ERRO]', RED)} ${this.getTimestamp()} - ${colorText(message, RED)}`);
-    }
+  public error(message: string): void {
+    console.log(`${colorText("[ERRO]", RED)} ${this._getTimestamp()} - ${colorText(message, RED)}`);
+  }
 }

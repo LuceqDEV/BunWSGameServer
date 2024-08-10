@@ -82,7 +82,7 @@
 
         connectButton.addEventListener('click', () => {
             if (!ws || ws.readyState === WebSocket.CLOSED) {
-                ws = new WebSocket('ws://10.100.4.143:8080');
+                ws = new WebSocket('ws://127.0.0.1:8080');
 
                 ws.onopen = () => {
                     statusDiv.textContent = 'Connected';
@@ -103,9 +103,6 @@
                     console.log('Raw data received:', data);
 
                     try {
-                        const totalSize = new DataView(data.buffer).getInt32(offset, true);
-                        offset += 4;
-
                         const packetId = new DataView(data.buffer).getInt16(offset, true);
                         offset += 2;
 
@@ -173,19 +170,18 @@
                     const messageSize = messageBytes.length;
                     const packetId = 1;
 
-                    const totalSize = 4 + 2 + 4 + nameSize + 4 + messageSize + 2;
+                    const totalSize = 2 + 4 + nameSize + 4 + messageSize + 2;
 
                     const packet = new Uint8Array(totalSize);
                     const dataView = new DataView(packet.buffer);
 
-                    dataView.setInt32(0, totalSize, true);
-                    dataView.setInt16(4, packetId, true);
-                    dataView.setInt32(6, nameSize, true);
-                    packet.set(nameBytes, 10);
-                    dataView.setInt32(10 + nameSize, messageSize, true);
-                    packet.set(messageBytes, 14 + nameSize);
-                    dataView.setInt8(14 + nameSize + messageSize, hour);
-                    dataView.setInt8(15 + nameSize + messageSize, minutes);
+                    dataView.setInt16(0, packetId, true);
+                    dataView.setInt32(2, nameSize, true);
+                    packet.set(nameBytes, 6);
+                    dataView.setInt32(6 + nameSize, messageSize, true);
+                    packet.set(messageBytes, 10 + nameSize);
+                    dataView.setInt8(10 + nameSize + messageSize, hour);
+                    dataView.setInt8(11 + nameSize + messageSize, minutes);
 
                     ws.send(packet);
 
