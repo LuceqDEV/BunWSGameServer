@@ -3,156 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Client</title>
+    <title>WebSocket Chat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+        #chatHistory {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+        #chatBox {
+            display: flex;
+            align-items: center;
+        }
+        #chatBox input {
+            flex: 1;
         }
         #status {
-            margin-top: 20px;
             font-size: 18px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>WebSocket Client</h1>
-    <button id="connect">Connect</button>
-    <button id="disconnect" disabled>Disconnect</button>
-    <button id="sendPing" disabled>Send Ping</button>
-    <div id="status">Disconnected</div>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">WebSocket Chat</h1>
+
+            <div class="field">
+                <div class="control">
+                    <input class="input" type="text" id="nameInput" placeholder="Enter your name">
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button id="connect" class="button is-primary">Connect</button>
+                <button id="disconnect" class="button is-danger" disabled>Disconnect</button>
+            </div>
+
+            <div id="status" class="has-text-weight-bold has-text-centered">Disconnected</div>
+
+            <div id="chatHistory" class="box mt-4"></div>
+
+            <div id="chatBox" class="field has-addons mt-4">
+                <div class="control is-expanded">
+                    <input class="input" type="text" id="messageInput" placeholder="Enter your message" disabled>
+                </div>
+                <div class="control">
+                    <button id="sendChat" class="button is-info" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <script>
-        class ByteBuffer {
-            constructor() {
-                this.buffer = new ArrayBuffer(1024); // Initial buffer size
-                this.view = new DataView(this.buffer);
-                this.offset = 0;
-            }
+    let ws;
 
-            putInt32(value) {
-                this.view.setInt32(this.offset, value, true);
-                this.offset += 4;
-            }
+    document.addEventListener('DOMContentLoaded', () => {
+        const connectButton = document.getElementById('connect');
+        const disconnectButton = document.getElementById('disconnect');
+        const sendChatButton = document.getElementById('sendChat');
+        const statusDiv = document.getElementById('status');
+        const chatHistory = document.getElementById('chatHistory');
+        const nameInput = document.getElementById('nameInput');
+        const messageInput = document.getElementById('messageInput');
 
-            putInt16(value) {
-                this.view.setInt16(this.offset, value, true);
-                this.offset += 2;
+        function addMessageToHistory(message, isOwnMessage = false) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageElement.classList.add('mb-2');
+            if (isOwnMessage) {
+                messageElement.classList.add('has-text-right', 'has-text-weight-bold');
             }
-
-            putBytes(bytes) {
-                new Uint8Array(this.buffer, this.offset, bytes.length).set(bytes);
-                this.offset += bytes.length;
-            }
-
-            getBytes() {
-                return new Uint8Array(this.buffer, 0, this.offset);
-            }
-
-            getInt32() {
-                const value = this.view.getInt32(this.offset, true);
-                this.offset += 4;
-                return value;
-            }
-
-            getInt16() {
-                const value = this.view.getInt16(this.offset, true);
-                this.offset += 2;
-                return value;
-            }
-
-            getBytesLength(length) {
-                const bytes = new Uint8Array(this.buffer, this.offset, length);
-                this.offset += length;
-                return bytes;
-            }
+            chatHistory.appendChild(messageElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        class Packet {
-            constructor(id, content) {
-                this.id = id;
-                this.content = content;
+        connectButton.addEventListener('click', () => {
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                ws = new WebSocket('ws://127.0.0.1:8080');
+
+                ws.onopen = () => {
+                    statusDiv.textContent = 'Connected';
+                    statusDiv.classList.remove('has-text-danger');
+                    statusDiv.classList.add('has-text-success');
+                    connectButton.disabled = true;
+                    disconnectButton.disabled = false;
+                    sendChatButton.disabled = false;
+                    messageInput.disabled = false;
+                };
+
+                ws.onmessage = async (event) => {
+                    const arrayBuffer = await event.data.arrayBuffer();
+                    const data = new Uint8Array(arrayBuffer);
+                    const decoder = new TextDecoder();
+                    let offset = 0;
+
+                    console.log('Raw data received:', data);
+
+                    try {
+                        const packetId = new DataView(data.buffer).getInt16(offset, true);
+                        offset += 2;
+
+                        const nameLength = new DataView(data.buffer).getInt32(offset, true);
+                        offset += 4;
+                        const name = decoder.decode(data.slice(offset, offset + nameLength));
+                        offset += nameLength;
+
+                        const messageLength = new DataView(data.buffer).getInt32(offset, true);
+                        offset += 4;
+                        const message = decoder.decode(data.slice(offset, offset + messageLength));
+                        offset += messageLength;
+
+                        const hour = new DataView(data.buffer).getInt8(offset);
+                        const minutes = new DataView(data.buffer).getInt8(offset + 1);
+
+                        addMessageToHistory(`${name} [${hour}:${minutes}]: ${message}`);
+                    } catch (error) {
+                        console.error('Error processing WebSocket message:', error);
+                    }
+                };
+
+                ws.onclose = () => {
+                    statusDiv.textContent = 'Disconnected';
+                    statusDiv.classList.remove('has-text-success');
+                    statusDiv.classList.add('has-text-danger');
+                    connectButton.disabled = false;
+                    disconnectButton.disabled = true;
+                    sendChatButton.disabled = true;
+                    messageInput.disabled = true;
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    statusDiv.textContent = 'Error';
+                    statusDiv.classList.add('has-text-danger');
+                    connectButton.disabled = false;
+                    disconnectButton.disabled = true;
+                    sendChatButton.disabled = true;
+                    messageInput.disabled = true;
+                };
             }
-
-            static fromByteBuffer(buffer) {
-                const size = buffer.getInt32();
-                const id = buffer.getInt16();
-                const content = buffer.getBytesLength(size);
-                return new Packet(id, content);
-            }
-
-            toByteBuffer() {
-                const buffer = new ByteBuffer();
-                buffer.putInt32(this.content.length);
-                buffer.putInt16(this.id);
-                buffer.putBytes(this.content);
-                return buffer;
-            }
-        }
-
-        let ws;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const connectButton = document.getElementById('connect');
-            const disconnectButton = document.getElementById('disconnect');
-            const sendPingButton = document.getElementById('sendPing');
-            const statusDiv = document.getElementById('status');
-
-            connectButton.addEventListener('click', () => {
-                if (!ws || ws.readyState === WebSocket.CLOSED) {
-                    ws = new WebSocket('ws://localhost:8080');
-
-                    ws.onopen = () => {
-                        statusDiv.textContent = 'Connected';
-                        statusDiv.style.color = 'green';
-                        connectButton.disabled = true;
-                        disconnectButton.disabled = false;
-                        sendPingButton.disabled = false;
-                    };
-
-                    ws.onmessage = (event) => {
-                        console.log('Message from server:', event.data);
-                    };
-
-                    ws.onclose = () => {
-                        statusDiv.textContent = 'Disconnected';
-                        statusDiv.style.color = 'red';
-                        connectButton.disabled = false;
-                        disconnectButton.disabled = true;
-                        sendPingButton.disabled = true;
-                    };
-
-                    ws.onerror = (error) => {
-                        console.error('WebSocket error:', error);
-                        statusDiv.textContent = 'Error';
-                        statusDiv.style.color = 'orange';
-                        connectButton.disabled = false;
-                        disconnectButton.disabled = true;
-                        sendPingButton.disabled = true;
-                    };
-                }
-            });
-
-            disconnectButton.addEventListener('click', () => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.close();
-                }
-            });
-
-            sendPingButton.addEventListener('click', () => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    const packet = new Packet(0, new Uint8Array()); // ID 0, empty content
-                    const byteBuffer = packet.toByteBuffer();
-                    ws.send(byteBuffer.getBytes());
-                }
-            });
         });
+
+        disconnectButton.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+        });
+
+        sendChatButton.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const name = nameInput.value.trim();
+                const message = messageInput.value.trim();
+
+                if (name && message) {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    const minutes = now.getMinutes();
+                    
+                    const encoder = new TextEncoder();
+                    const nameBytes = encoder.encode(name);
+                    const messageBytes = encoder.encode(message);
+                    const nameSize = nameBytes.length;
+                    const messageSize = messageBytes.length;
+                    const packetId = 1;
+
+                    const totalSize = 2 + 4 + nameSize + 4 + messageSize + 2;
+
+                    const packet = new Uint8Array(totalSize);
+                    const dataView = new DataView(packet.buffer);
+
+                    dataView.setInt16(0, packetId, true);
+                    dataView.setInt32(2, nameSize, true);
+                    packet.set(nameBytes, 6);
+                    dataView.setInt32(6 + nameSize, messageSize, true);
+                    packet.set(messageBytes, 10 + nameSize);
+                    dataView.setInt8(10 + nameSize + messageSize, hour);
+                    dataView.setInt8(11 + nameSize + messageSize, minutes);
+
+                    ws.send(packet);
+
+                    addMessageToHistory(`You [${hour}:${minutes}]: ${message}`, true);
+                    messageInput.value = '';
+                } else {
+                    alert('Please enter your name and message.');
+                }
+            }
+        });
+    });
     </script>
 </body>
 </html>

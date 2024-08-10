@@ -1,22 +1,23 @@
 import type { ServerWebSocket } from "bun";
 import type { Packet } from "./packet";
+import type { ConnectionModel } from "../../models/connection.model";
 
-type Handler = (ws: ServerWebSocket, packet: Packet) => void;
+type Proccessor = (connection: ConnectionModel, packet: Packet) => void;
 
 export class Processor {
-    private handlers: Map<number, Handler> = new Map();
+  private handlers: Map<number, Proccessor> = new Map();
 
-    public registerHandler(packetId: number, handler: Handler): void {
-        this.handlers.set(packetId, handler);
+  public registerHandler(packetId: number, handler: Proccessor): void {
+    this.handlers.set(packetId, handler);
+  }
+
+  public handlePacket(connection: ConnectionModel, packet: Packet): void {
+    const handler = this.handlers.get(packet.id);
+
+    if (handler) {
+      handler(connection, packet);
+    } else {
+      console.warn(`No handler found for packet ID: ${packet.id}`);
     }
-
-    public handlePacket(ws: ServerWebSocket, packet: Packet): void {
-        const handler = this.handlers.get(packet.id);
-
-        if (handler) {
-            handler(ws, packet);
-        } else {
-            console.warn(`No handler found for packet ID: ${packet.id}`);
-        }
-    }
+  }
 }

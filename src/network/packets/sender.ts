@@ -1,49 +1,48 @@
-import type { ServerWebSocket } from "bun";
 import { Logger } from "../../shared/logger";
-import { ByteBuffer } from "../buffers/byte_buffer";
+import { ByteBuffer } from "../buffers/byte.buffer";
 import { Packet } from "../packets/packet";
 import { Memory } from "../../server/memory";
 import { ConnectionModel } from "../../models/connection.model";
 
 export class Sender {
-    private static _logger: Logger = Logger.get();
-    private static _memory: Memory = Memory.get();
+  private static _logger: Logger = Logger.get();
+  private static _memory: Memory = Memory.get();
 
-    public static dataTo(ws: ServerWebSocket, packet: Packet): void {
+  public static dataTo(connection: ConnectionModel, packet: Packet): void {
+    try {
+      const buffer: ByteBuffer = packet.toByteBuffer();
+
+      connection.ws.send(buffer.getBuffer());
+    } catch (error) {
+      this._logger.error("Erro ao enviar dados para o cliente! Erro: " + error);
+    }
+  }
+
+  public static dataToAll(packet: Packet): void {
+    const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
+
+    for (const connection of filledSlots) {
+      if (connection?.ws) {
         try {
-            const buffer: ByteBuffer = packet.toByteBuffer();
-
-            ws.send(buffer.getBuffer());
+          this.dataTo(connection, packet);
         } catch (error) {
-            this._logger.error('Erro ao enviar dados para o cliente! Erro: ' + error);
+          this._logger.error("Erro ao enviar dados para o cliente! Erro: " + error);
         }
+      }
     }
+  }
 
-    public static dataToAll(packet: Packet): void {
-        const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
+  public static dataToAllExcept(exceptConnection: ConnectionModel, packet: Packet): void {
+    const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
 
-        for (const connection of filledSlots) {
-            if (connection?.ws) {
-                try {
-                    this.dataTo(connection.ws, packet);
-                } catch (error) {
-                    this._logger.error('Erro ao enviar dados para o cliente! Erro: ' + error);
-                }
-            }
+    for (const connection of filledSlots) {
+      if (connection?.ws && connection !== exceptConnection) {
+        try {
+          this.dataTo(connection, packet);
+        } catch (error) {
+          this._logger.error("Erro ao enviar dados para o cliente! Erro: " + error);
         }
+      }
     }
-
-    public static dataToAllExcept(exceptWs: ServerWebSocket, packet: Packet): void {
-        const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
-
-        for (const connection of filledSlots) {
-            if (connection?.ws && connection.ws !== exceptWs) {
-                try {
-                    this.dataTo(connection.ws, packet);
-                } catch (error) {
-                    this._logger.error('Erro ao enviar dados para o cliente! Erro: ' + error);
-                }
-            }
-        }
-    }
+  }
 }
