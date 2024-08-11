@@ -1,22 +1,21 @@
 import type { ServerWebSocket } from "bun";
 import { Memory } from "../server/memory";
+import type { CharacterModel } from "./character.model";
 
 export class ConnectionModel {
-  constructor(ws: ServerWebSocket, id: number, inGame: boolean = false) {
+  constructor(ws: ServerWebSocket, id: number, logged: boolean = false) {
     this.ws = ws;
     this.id = id;
     this.active = true;
-    this.inGame = inGame;
+    this.logged = logged;
   }
 
   public ws: ServerWebSocket;
   public id: number;
   public active: boolean;
-  public inGame?: boolean;
-
-  public copyWith(modifyObject: Partial<ConnectionModel>): ConnectionModel {
-    return Object.assign(Object.create(ConnectionModel.prototype), this, modifyObject);
-  }
+  public logged?: boolean;
+  public characters?: CharacterModel[];
+  public characterInUse?: CharacterModel;
 
   public isConnected(): boolean {
     const memory = Memory.get();
