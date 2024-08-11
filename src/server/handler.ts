@@ -3,8 +3,8 @@ import { Logger } from "../shared/logger";
 import { Memory } from "./memory";
 import { Processor } from "../network/handler/processor";
 import { ClientHeaders } from "../network/packets/headers/client.header";
-import { PingPacket } from "../network/packets/messages/ping";
-import { ChatPacket } from "../network/packets/messages/chat";
+import { PingMessage } from "../network/packets/messages/ping";
+import { ChatMessage } from "../network/packets/messages/chat";
 import { ConnectionModel } from "../models/connection.model";
 import { ByteBuffer } from "../network/buffers/byte.buffer";
 import { Packet } from "../network/packets/packet";
@@ -16,12 +16,12 @@ export class Handler {
   private _packetProcessor: Processor = new Processor();
 
   constructor() {
-    this._packetProcessor.registerPacket(ClientHeaders.ping, (connection, packet) => {
-      return new PingPacket().handle(connection, packet);
+    this._packetProcessor.registerMessage(ClientHeaders.ping, (connection, packet) => {
+      return new PingMessage().handle(connection, packet);
     });
 
-    this._packetProcessor.registerPacket(ClientHeaders.chat, (connection, packet) => {
-      return new ChatPacket().handle(connection, packet);
+    this._packetProcessor.registerMessage(ClientHeaders.chat, (connection, packet) => {
+      return new ChatMessage().handle(connection, packet);
     });
   }
 
@@ -49,7 +49,7 @@ export class Handler {
       if (connection) {
         const byteBuffer = new ByteBuffer(message);
         const packet = Packet.fromByteBuffer(byteBuffer);
-        this._packetProcessor.processPacket(connection, packet);
+        this._packetProcessor.processMessage(connection, packet);
       } else {
         this._logger.error(`Conexão não encontrada para o WebSocket.`);
         this._cleanupConnection(ws);

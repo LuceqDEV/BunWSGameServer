@@ -2,14 +2,14 @@ import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
 import { Sender } from "../../handler/sender";
 import type { ConnectionModel } from "../../../models/connection.model";
-import type { PacketInterface } from "../../../interfaces/packet.interface";
+import type { MessageInterface } from "../../../interfaces/message.interface";
 import { ServerHeaders } from "../headers/server.header";
 
-export class PingPacket implements PacketInterface {
+export class PingMessage implements MessageInterface {
   public constructor() {}
 
-  fromPacket(packet: Packet): PingPacket {
-    return new PingPacket();
+  fromPacket(packet: Packet): PingMessage {
+    return new PingMessage();
   }
 
   toPacket(): Packet {
@@ -19,10 +19,12 @@ export class PingPacket implements PacketInterface {
 
   send(connection: ConnectionModel): void {
     const pingPacket = this.toPacket();
+    console.log("enviando o ping");
     Sender.dataTo(connection, pingPacket);
   }
 
   handle(connection: ConnectionModel, packet: Packet): void {
+    console.log("processando ping");
     this.send(connection);
   }
 }

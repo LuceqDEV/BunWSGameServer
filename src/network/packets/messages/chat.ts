@@ -2,10 +2,10 @@ import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
 import { Sender } from "../../handler/sender";
 import type { ConnectionModel } from "../../../models/connection.model";
-import type { PacketInterface } from "../../../interfaces/packet.interface";
+import type { MessageInterface } from "../../../interfaces/message.interface";
 import { ServerHeaders } from "../headers/server.header";
 
-export class ChatPacket implements PacketInterface {
+export class ChatMessage implements MessageInterface {
   public constructor(
     private name: string = "",
     private message: string = "",
@@ -13,14 +13,14 @@ export class ChatPacket implements PacketInterface {
     private minutes: number = 0
   ) {}
 
-  fromPacket(packet: Packet): ChatPacket {
+  fromPacket(packet: Packet): ChatMessage {
     const byteBuffer = new ByteBuffer(packet.content);
     const name = byteBuffer.getString();
     const message = byteBuffer.getString();
     const hour = byteBuffer.getInt8();
     const minutes = byteBuffer.getInt8();
 
-    return new ChatPacket(name, message, hour, minutes);
+    return new ChatMessage(name, message, hour, minutes);
   }
 
   toPacket(): Packet {
