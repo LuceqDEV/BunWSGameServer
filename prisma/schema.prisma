@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Accounts {
+  id         Int          @id @default(autoincrement())
+  name       String
+  email      String       @unique
+  password   String
+  enabled    Boolean      @default(true)
+  characters Characters[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now())
+}
+
+model Characters {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  isAdmin       Boolean   @default(false)
+  currentLevel  Int       @default(0)
+  currentExp    Int       @default(0)
+  mapsId        Int
+  currentMap    Maps      @relation(fields: [mapsId], references: [id])
+  mapPosX       Int       @default(1)
+  mapPosY       Int       @default(1)
+  lastDirection Int       @default(0)
+  accountsId    Int?
+  Accounts      Accounts? @relation(fields: [accountsId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+}
+
+model Maps {
+  id         Int          @id @default(autoincrement())
+  name       String       @unique
+  mapSizeX   Int          @default(1)
+  mapSizeY   Int          @default(1)
+  Characters Characters[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now())
+}

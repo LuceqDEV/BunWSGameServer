@@ -4,15 +4,22 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "prisma": "^5.18.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "prisma": {
+    "seed": "node utils/seed.ts"
   },
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --hot index.ts",
     "build": "bun build index.ts --outdir ./build",
     "release": "bun build/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0"
   }
 }
