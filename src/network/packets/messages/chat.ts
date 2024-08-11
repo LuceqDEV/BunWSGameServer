@@ -1,11 +1,11 @@
 import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
-import { Sender } from "../sender";
-import { ServerHeaders } from "../headers";
+import { Sender } from "../../handler/sender";
 import type { ConnectionModel } from "../../../models/connection.model";
-import type { IPacketHandler } from "../../handler/handler.interface";
+import type { PacketInterface } from "../../../interfaces/packet.interface";
+import { ServerHeaders } from "../headers/server.header";
 
-export class ChatPacket implements IPacketHandler {
+export class ChatPacket implements PacketInterface {
   public constructor(
     private name: string = "",
     private message: string = "",

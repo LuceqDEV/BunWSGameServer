@@ -1,14 +1,14 @@
 import type { ServerWebSocket } from "bun";
-import { Logger } from "../../shared/logger";
-import { Memory } from "../../server/memory";
-import { ConnectionModel } from "../../models/connection.model";
-import { IpConverter } from "../../shared/ipconverter";
-import { Processor } from "../packets/processor";
-import { ByteBuffer } from "../buffers/byte.buffer";
-import { Packet } from "../packets/packet";
-import { ClientHeaders, ServerHeaders } from "../packets/headers";
-import { PingPacket } from "../packets/packets/ping.packet";
-import { ChatPacket } from "../packets/packets/chat.packet";
+import { Logger } from "../shared/logger";
+import { Memory } from "./memory";
+import { Processor } from "../network/handler/processor";
+import { ClientHeaders } from "../network/packets/headers/client.header";
+import { PingPacket } from "../network/packets/messages/ping";
+import { ChatPacket } from "../network/packets/messages/chat";
+import { ConnectionModel } from "../models/connection.model";
+import { ByteBuffer } from "../network/buffers/byte.buffer";
+import { Packet } from "../network/packets/packet";
+import { IpConverter } from "../shared/ipconverter";
 
 export class Handler {
   private _logger: Logger = Logger.get();
@@ -16,15 +16,11 @@ export class Handler {
   private _packetProcessor: Processor = new Processor();
 
   constructor() {
-    this._initializePacketHandlers();
-  }
-
-  private _initializePacketHandlers(): void {
-    this._packetProcessor.registerHandler(ClientHeaders.ping, (connection, packet) => {
+    this._packetProcessor.registerPacket(ClientHeaders.ping, (connection, packet) => {
       return new PingPacket().handle(connection, packet);
     });
 
-    this._packetProcessor.registerHandler(ClientHeaders.chat, (connection, packet) => {
+    this._packetProcessor.registerPacket(ClientHeaders.chat, (connection, packet) => {
       return new ChatPacket().handle(connection, packet);
     });
   }
@@ -53,7 +49,7 @@ export class Handler {
       if (connection) {
         const byteBuffer = new ByteBuffer(message);
         const packet = Packet.fromByteBuffer(byteBuffer);
-        this._packetProcessor.handlePacket(connection, packet);
+        this._packetProcessor.processPacket(connection, packet);
       } else {
         this._logger.error(`Conexão não encontrada para o WebSocket.`);
         this._cleanupConnection(ws);

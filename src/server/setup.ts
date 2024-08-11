@@ -2,7 +2,7 @@ import type { Server, ServerWebSocket } from "bun";
 import { ServerPort } from "../shared/constants";
 import { Logger } from "../shared/logger";
 import { IpConverter } from "../shared/ipconverter";
-import { Handler } from "../network/handler/handler";
+import { Handler } from "./handler";
 
 export class Setup {
   private _logger: Logger;
