@@ -1,14 +1,14 @@
-import type { CharacterModel } from "./character.model";
-import type { Vector2 } from "./vector2.model";
+import type { Character } from "./character";
+import type { Vector2 } from "./vector2";
 
-export class MapModel {
+export class Map {
   public id: number;
   public name: string;
   public mapSizeX: number;
   public mapSizeY: number;
-  public characters: CharacterModel[];
+  public characters: Character[];
 
-  constructor(id: number, name: string, mapSizeX: number, mapSizeY: number, characters: CharacterModel[]) {
+  constructor(id: number, name: string, mapSizeX: number, mapSizeY: number, characters: Character[]) {
     this.id = id;
     this.name = name;
     this.mapSizeX = mapSizeX;
@@ -16,7 +16,7 @@ export class MapModel {
     this.characters = characters;
   }
 
-  public addCharacter(character: CharacterModel, position: Vector2): void {
+  public addCharacter(character: Character, position: Vector2): void {
     if (this.characters.some((char) => char.id === character.id)) {
       return;
     }
@@ -31,7 +31,7 @@ export class MapModel {
     this._sendAllCharactersToNewCharacter(character);
   }
 
-  public removeCharacter(character: CharacterModel): void {
+  public removeCharacter(character: Character): void {
     const index = this.characters.findIndex((char) => char.id === character.id);
 
     if (index !== -1) {
@@ -40,18 +40,18 @@ export class MapModel {
     }
   }
 
-  public updateCharacterPositionToAll(character: CharacterModel, position: Vector2): void {
+  public updateCharacterPositionToAll(character: Character, position: Vector2): void {
     if (character) {
       character.lastMapPosition = position;
       this._updateCharacterPositionToAll(character);
     }
   }
 
-  public getCharacterPosition(character: CharacterModel): Vector2 {
+  public getCharacterPosition(character: Character): Vector2 {
     return character.lastMapPosition;
   }
 
-  private _sendAllCharactersToNewCharacter(character: CharacterModel): void {
+  private _sendAllCharactersToNewCharacter(character: Character): void {
     // Enviar todos os jogadores atuais para o novo jogador
     this.characters.forEach((char) => {
       if (char.id !== character.id) {
@@ -60,7 +60,7 @@ export class MapModel {
     });
   }
 
-  private _notifyAllPlayersAboutNewCharacter(character: CharacterModel): void {
+  private _notifyAllPlayersAboutNewCharacter(character: Character): void {
     // Informar todos os jogadores sobre o novo jogador
     this.characters.forEach((char) => {
       if (char.id !== character.id) {
@@ -69,7 +69,7 @@ export class MapModel {
     });
   }
 
-  private _notifyCharacter(receiver: CharacterModel, sender: CharacterModel): void {}
+  private _notifyCharacter(receiver: Character, sender: Character): void {}
 
   private _handlePlayerLeave(characterId: number): void {
     this.characters.forEach((char) => {
@@ -79,9 +79,9 @@ export class MapModel {
     });
   }
 
-  private _notifyCharacterLeave(receiver: CharacterModel, leavingCharacterId: number): void {}
+  private _notifyCharacterLeave(receiver: Character, leavingCharacterId: number): void {}
 
-  private _updateCharacterPositionToAll(character: CharacterModel): void {
+  private _updateCharacterPositionToAll(character: Character): void {
     this.characters.forEach((char) => {
       if (char.id !== character.id) {
       }

@@ -1,8 +1,9 @@
 import type { ServerWebSocket } from "bun";
 import { Memory } from "../server/memory";
-import type { CharacterModel } from "./character.model";
+import type { Character } from "./character";
+import type { Account } from "./account";
 
-export class ConnectionModel {
+export class Connection {
   constructor(ws: ServerWebSocket, id: number, logged: boolean = false) {
     this.ws = ws;
     this.id = id;
@@ -14,8 +15,9 @@ export class ConnectionModel {
   public id: number;
   public active: boolean;
   public logged?: boolean;
-  public characters?: CharacterModel[];
-  public characterInUse?: CharacterModel;
+  public account?: Account;
+  public characters?: Character[];
+  public characterInUse?: Character;
 
   public isConnected(): boolean {
     const memory = Memory.get();

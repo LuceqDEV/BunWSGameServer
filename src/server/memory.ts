@@ -1,18 +1,18 @@
 import type { ServerWebSocket } from "bun";
-import type { ConnectionModel } from "../models/connection.model";
+import type { Connection } from "../game/connection";
 import { MaxMaps, MaxPlayers } from "../shared/constants";
 import { Slots } from "../shared/slots";
-import type { MapModel } from "../models/map.model";
+import type { Map } from "../game/map";
 
 export class Memory {
   private static _instance: Memory;
 
-  public clientConnections: Slots<ConnectionModel>;
-  public maps: Slots<MapModel>;
+  public clientConnections: Slots<Connection>;
+  public maps: Slots<Map>;
 
   private constructor() {
-    this.clientConnections = new Slots<ConnectionModel>(MaxPlayers);
-    this.maps = new Slots<MapModel>(MaxMaps);
+    this.clientConnections = new Slots<Connection>(MaxPlayers);
+    this.maps = new Slots<Map>(MaxMaps);
   }
 
   public static get(): Memory {
@@ -22,7 +22,7 @@ export class Memory {
     return Memory._instance;
   }
 
-  public getConnectionBySocket(ws: ServerWebSocket): ConnectionModel | undefined {
+  public getConnectionBySocket(ws: ServerWebSocket): Connection | undefined {
     for (const connection of this.clientConnections.getFilledSlotsAsList()) {
       if (connection && connection.ws === ws) {
         return connection;

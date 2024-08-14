@@ -1,9 +1,9 @@
-import type { ConnectionModel } from "./connection.model";
-import type { Vector2 } from "./vector2.model";
+import type { Connection } from "./connection";
+import type { Vector2 } from "./vector2";
 
-export class CharacterModel {
+export class Character {
   constructor(
-    connection: ConnectionModel,
+    connection: Connection,
     id: number,
     name: string,
     isAdmin: boolean,
@@ -26,7 +26,7 @@ export class CharacterModel {
     this.inMap = inMap;
   }
 
-  public connection: ConnectionModel;
+  public connection: Connection;
   public id: number;
   public name: string;
   public isAdmin: boolean;

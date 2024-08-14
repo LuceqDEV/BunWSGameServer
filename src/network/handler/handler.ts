@@ -1,14 +1,16 @@
 import type { ServerWebSocket } from "bun";
-import { Logger } from "../shared/logger";
-import { Memory } from "./memory";
-import { Processor } from "../network/handler/processor";
-import { ClientHeaders } from "../network/packets/headers/client.header";
-import { PingMessage } from "../network/packets/messages/ping";
-import { ChatMessage } from "../network/packets/messages/chat";
-import { ConnectionModel } from "../models/connection.model";
-import { ByteBuffer } from "../network/buffers/byte.buffer";
-import { Packet } from "../network/packets/packet";
-import { IpConverter } from "../shared/ipconverter";
+import { Logger } from "../../shared/logger";
+import { Memory } from "../../server/memory";
+import { Processor } from "./processor";
+import { ClientHeaders } from "../packets/headers/client.header";
+import { PingMessage } from "../packets/messages/ping";
+import { ChatMessage } from "../packets/messages/chat";
+import { Connection } from "../../game/connection";
+import { ByteBuffer } from "../buffers/byte.buffer";
+import { Packet } from "../packets/packet";
+import { IpConverter } from "../../shared/ipconverter";
+import { AlertMessage } from "../packets/messages/alert";
+import { SigInMessage } from "../packets/messages/signin";
 
 export class Handler {
   private _logger: Logger = Logger.get();
@@ -23,6 +25,10 @@ export class Handler {
     this._packetProcessor.registerMessage(ClientHeaders.chat, (connection, packet) => {
       return new ChatMessage().handle(connection, packet);
     });
+
+    this._packetProcessor.registerMessage(ClientHeaders.signIn, (connection, packet) => {
+      return new SigInMessage().handle(connection, packet);
+    });
   }
 
   public websocketOpen(ws: ServerWebSocket): void {
@@ -34,7 +40,7 @@ export class Handler {
       return;
     }
 
-    const connectionModel: ConnectionModel = new ConnectionModel(ws, firstAvailableId);
+    const connectionModel: Connection = new Connection(ws, firstAvailableId);
     this._memory.clientConnections.add(connectionModel);
   }
 
@@ -61,11 +67,14 @@ export class Handler {
   }
 
   private _handleFullServer(ws: ServerWebSocket): void {
-    this._logger.info(
-      "O servidor está cheio, desconectando o cliente: " + IpConverter.getIPv4(IpConverter.getIPv4(ws.remoteAddress))
-    );
-    this._logger.info("Conn finalizada, conn: " + IpConverter.getIPv4(ws.remoteAddress));
+    try {
+      const connection: Connection = new Connection(ws, -1);
+      new AlertMessage("O servidor está cheio, tente novamente mais tarde...").send(connection);
+    } catch (error) {
+      this._logger.error("Erro ao enviar alerta para a conexão, servidor cheio.");
+    }
 
+    this._logger.info("O servidor está cheio, desconectando o cliente: " + IpConverter.getIPv4(ws.remoteAddress));
     ws.close();
   }
 

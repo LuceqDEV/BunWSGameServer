@@ -1,7 +1,7 @@
 import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
 import { Sender } from "../../handler/sender";
-import type { ConnectionModel } from "../../../models/connection.model";
+import type { Connection } from "../../../game/connection";
 import type { MessageInterface } from "../../../interfaces/message.interface";
 import { ServerHeaders } from "../headers/server.header";
 
@@ -33,12 +33,12 @@ export class ChatMessage implements MessageInterface {
     return new Packet(ServerHeaders.chat, byteBuffer.getBuffer());
   }
 
-  send(connection: ConnectionModel): void {
+  send(connection: Connection): void {
     const chatPacket = this.toPacket();
     Sender.dataToAllExcept(connection, chatPacket);
   }
 
-  handle(connection: ConnectionModel, packet: Packet): void {
+  handle(connection: Connection, packet: Packet): void {
     const chatPacket = this.fromPacket(packet);
     chatPacket.send(connection);
   }

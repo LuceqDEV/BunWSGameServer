@@ -2,13 +2,13 @@ import { Logger } from "../../shared/logger";
 import { ByteBuffer } from "../buffers/byte.buffer";
 import { Packet } from "../packets/packet";
 import { Memory } from "../../server/memory";
-import { ConnectionModel } from "../../models/connection.model";
+import { Connection } from "../../game/connection";
 
 export class Sender {
   private static _logger: Logger = Logger.get();
   private static _memory: Memory = Memory.get();
 
-  public static dataTo(connection: ConnectionModel, packet: Packet): void {
+  public static dataTo(connection: Connection, packet: Packet): void {
     try {
       const buffer: ByteBuffer = packet.toByteBuffer();
 
@@ -19,7 +19,7 @@ export class Sender {
   }
 
   public static dataToAll(packet: Packet): void {
-    const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
+    const filledSlots: (Connection | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
 
     for (const connection of filledSlots) {
       if (connection?.ws) {
@@ -32,8 +32,8 @@ export class Sender {
     }
   }
 
-  public static dataToAllExcept(exceptConnection: ConnectionModel, packet: Packet): void {
-    const filledSlots: (ConnectionModel | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
+  public static dataToAllExcept(exceptConnection: Connection, packet: Packet): void {
+    const filledSlots: (Connection | undefined)[] = this._memory.clientConnections.getFilledSlotsAsList();
 
     for (const connection of filledSlots) {
       if (connection?.ws && connection !== exceptConnection) {

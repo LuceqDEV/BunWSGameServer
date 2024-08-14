@@ -1,9 +1,9 @@
-import type { ConnectionModel } from "../models/connection.model";
+import type { Connection } from "../game/connection";
 import { Packet } from "../network/packets/packet";
 
 export interface MessageInterface {
   fromPacket(packet: Packet): MessageInterface;
   toPacket(): Packet;
-  send(connection: ConnectionModel): void;
-  handle(connection: ConnectionModel, packet: Packet): void;
+  send(connection: Connection): void;
+  handle(connection: Connection, packet: Packet): void;
 }

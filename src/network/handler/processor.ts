@@ -1,7 +1,7 @@
 import type { Packet } from "../packets/packet";
-import type { ConnectionModel } from "../../models/connection.model";
+import type { Connection } from "../../game/connection";
 
-type Proccessor = (connection: ConnectionModel, packet: Packet) => void;
+type Proccessor = (connection: Connection, packet: Packet) => void;
 
 export class Processor {
   private handlers: Map<number, Proccessor> = new Map();
@@ -10,7 +10,7 @@ export class Processor {
     this.handlers.set(id, proccessor);
   }
 
-  public processMessage(connection: ConnectionModel, packet: Packet): void {
+  public processMessage(connection: Connection, packet: Packet): void {
     const handler = this.handlers.get(packet.id);
 
     if (handler) {

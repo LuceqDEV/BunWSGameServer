@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { Password } from "../shared/password";
+import { EmailUtils } from "../../utils/email.utils";
 
 export class AccountDatabase {
   _prisma: PrismaClient;
@@ -10,11 +11,6 @@ export class AccountDatabase {
     this._password = new Password();
   }
 
-  private isValidEmail(email: string) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
   public async findAccountById(id: number) {
     return await this._prisma.accounts.findUnique({
       where: { id: id },
@@ -22,8 +18,8 @@ export class AccountDatabase {
   }
 
   public async findAccountByEmail(email: string) {
-    if (!this.isValidEmail(email)) {
-      throw "Email inválido.";
+    if (!EmailUtils.isValidEmail(email)) {
+      throw "Ops! o email informado não é válido!";
     }
 
     return await this._prisma.accounts.findUnique({
