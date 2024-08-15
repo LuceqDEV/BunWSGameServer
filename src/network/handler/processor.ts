@@ -5,8 +5,8 @@ import { Logger } from "../../shared/logger";
 
 type MessageHandler = (connection: Connection, packet: Packet) => void;
 
-interface MessageMap {
-  [key: number]: new () => Message<any>;
+export interface MessageMap {
+  [key: number]: () => Message<any>;
 }
 
 export class Processor {
@@ -14,8 +14,8 @@ export class Processor {
   private logger: Logger = Logger.get();
 
   constructor(messageMap: MessageMap) {
-    for (const [header, messages] of Object.entries(messageMap)) {
-      this.registerMessage(Number(header), this.createHandler(messages));
+    for (const [header, createMessage] of Object.entries(messageMap)) {
+      this.registerMessage(Number(header), this.createHandler(createMessage));
     }
   }
 
@@ -23,9 +23,9 @@ export class Processor {
     this.handlers.set(id, handler);
   }
 
-  private createHandler(MessageClass: new () => Message<any>): MessageHandler {
+  private createHandler(createMessage: () => Message<any>): MessageHandler {
     return (connection: Connection, packet: Packet) => {
-      const messageInstance = new MessageClass();
+      const messageInstance = createMessage();
       messageInstance.handle(connection, packet);
     };
   }

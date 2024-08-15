@@ -1,157 +1,147 @@
+import { AccountDatabase } from "../../../database/account.database";
+import { Account } from "../../../game/account";
 import type { Connection } from "../../../game/connection";
+import { Memory } from "../../../server/memory";
+import {
+  EMAIL_MIN_LENGTH,
+  MAJOR_VERSION,
+  MINOR_VERSION,
+  PASSWORD_MIN_LENGTH,
+  REVISION_VERSION,
+} from "../../../shared/constants";
+import type { Slots } from "../../../shared/slots";
+import { ByteBuffer } from "../../buffers/byte.buffer";
+import { Sender } from "../../handler/sender";
 import { ServerHeaders } from "../headers/server.header";
 import { Message } from "../message";
-import type { Packet } from "../packet";
+import { Packet } from "../packet";
+import { AlertMessage } from "./alert";
 
 export class SignInMessage extends Message<SignInMessage> {
-  constructor() {
+  private email: string;
+  private password: string;
+  private major: number;
+  private minor: number;
+  private revision: number;
+
+  constructor(email: string = "", password: string = "", major: number = 0, minor: number = 0, revision: number = 0) {
     super(ServerHeaders.signIn);
+    this.email = email;
+    this.password = password;
+    this.major = major;
+    this.minor = minor;
+    this.revision = revision;
+  }
+
+  public static create(): SignInMessage {
+    return new SignInMessage();
+  }
+
+  public clean(): void {
+    this.email = "";
+    this.password = "";
+    this.major = 0;
+    this.minor = 0;
+    this.revision = 0;
   }
 
   public fromPacket(packet: Packet): SignInMessage {
-    throw new Error("Method not implemented.");
+    const byteBuffer = new ByteBuffer(packet.content);
+
+    const email: string = byteBuffer.getString();
+    const password: string = byteBuffer.getString();
+    const major: number = byteBuffer.getInt16();
+    const minor: number = byteBuffer.getInt16();
+    const revision: number = byteBuffer.getInt16();
+
+    return new SignInMessage(email, password, major, minor, revision);
   }
+
   public toPacket(): Packet {
-    throw new Error("Method not implemented.");
+    const byteBuffer = new ByteBuffer();
+
+    return new Packet(this.getPacketId(), byteBuffer.getBuffer());
   }
-  public handle(connection: Connection, packet: Packet): void {
-    throw new Error("Method not implemented.");
+
+  public async handle(connection: Connection, packet: Packet): Promise<void> {
+    console.log(packet.content);
+    const signInPacket = this.fromPacket(packet);
+
+    if (!this.validateVersion(signInPacket, connection)) return;
+    if (!this.validateCredentials(signInPacket, connection)) return;
+
+    const accountDatabase: AccountDatabase = new AccountDatabase();
+    const connections: Slots<Connection> = Memory.get().clientConnections;
+
+    try {
+      const result = await accountDatabase.findAccountByEmail(signInPacket.email);
+
+      if (!this.validateAccount(result, connection)) return;
+
+      this.isAccountLogged(signInPacket.email, connections);
+
+      const existingConnection = connections.get(connection.id);
+
+      if (existingConnection) {
+        existingConnection.account = new Account(result!.id, result!.name, result!.email, result!.enabled);
+        existingConnection.logged = true;
+      }
+
+      signInPacket.send(connection);
+    } catch (error) {
+      new AlertMessage("Ops! o email informado não é válido!").send(connection);
+      return;
+    }
   }
+
   protected sendPacket(connection: Connection, packet: Packet): void {
-    throw new Error("Method not implemented.");
+    Sender.dataTo(connection, this.toPacket());
+  }
+
+  private validateVersion(packet: SignInMessage, connection: Connection): boolean {
+    if (packet.major !== MAJOR_VERSION || packet.minor !== MINOR_VERSION || packet.revision !== REVISION_VERSION) {
+      new AlertMessage("Ops! o cliente está desatualizado!").send(connection);
+      return false;
+    }
+    return true;
+  }
+
+  private validateCredentials(packet: SignInMessage, connection: Connection): boolean {
+    if (packet.email.length < EMAIL_MIN_LENGTH) {
+      new AlertMessage("Ops! o email informado é muito pequeno!").send(connection);
+      return false;
+    }
+
+    if (packet.password.length < PASSWORD_MIN_LENGTH) {
+      new AlertMessage("Ops! a senha informada é muito pequena!").send(connection);
+      return false;
+    }
+
+    return true;
+  }
+
+  private validateAccount(result: any, connection: Connection): boolean {
+    if (result == null) {
+      new AlertMessage("Ops! o email informado não pertence a um usuário cadastrado!").send(connection);
+      return false;
+    }
+
+    if (!result.enabled) {
+      new AlertMessage("Ops! a sua conta foi desativada, entre em contato com o suporte para mais detalhes.").send(
+        connection
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private isAccountLogged(email: string, connections: Slots<Connection>): void {
+    for (const conn of connections.getFilledSlotsAsList()) {
+      if (conn?.logged && conn.account?.email === email) {
+        new AlertMessage("Ops! a sua conta já está conectada em outro local! Desconectando...").send(conn);
+        conn.disconnect();
+      }
+    }
   }
 }
-
-// import { ByteBuffer } from "../../buffers/byte.buffer";
-// import { Packet } from "../packet";
-// import { Sender } from "../../handler/sender";
-// import type { Connection } from "../../../game/connection";
-// import type { MessageInterface } from "../../../interfaces/message.interface";
-// import { ServerHeaders } from "../headers/server.header";
-// import {
-//   EmailMinLength,
-//   MajorVersion,
-//   MinorVersion,
-//   PasswordMinLength,
-//   RevisionVersion,
-// } from "../../../shared/constants";
-// import { AlertMessage } from "./alert";
-// import { AccountDatabase } from "../../../database/account.database";
-// import { Memory } from "../../../server/memory";
-// import type { Slots } from "../../../shared/slots";
-// import { Account } from "../../../game/account";
-
-// export class SigInMessage implements MessageInterface {
-//   public constructor(
-//     private email: string = "",
-//     private password: string = "",
-//     private major: number = 0,
-//     private minor: number = 0,
-//     private revision: number = 0
-//   ) {}
-
-//   fromPacket(packet: Packet): SigInMessage {
-//     const byteBuffer = new ByteBuffer(packet.content);
-//     const email: string = byteBuffer.getString();
-//     const password: string = byteBuffer.getString();
-//     const major: number = byteBuffer.getInt16();
-//     const minor: number = byteBuffer.getInt16();
-//     const revision: number = byteBuffer.getInt16();
-
-//     return new SigInMessage(email, password, major, minor, revision);
-//   }
-
-//   toPacket(): Packet {
-//     const byteBuffer = new ByteBuffer();
-//     byteBuffer.putString(this.email);
-//     byteBuffer.putString(this.password);
-//     byteBuffer.putInt16(this.major);
-//     byteBuffer.putInt16(this.minor);
-//     byteBuffer.putInt16(this.revision);
-
-//     return new Packet(ServerHeaders.signIn, byteBuffer.getBuffer());
-//   }
-
-//   send(connection: Connection): void {
-//     Sender.dataToAllExcept(connection, this.toPacket());
-//   }
-
-//   async handle(connection: Connection, packet: Packet): Promise<void> {
-//     const signInPacket = this.fromPacket(packet);
-
-//     if (!this._validateVersion(signInPacket, connection)) return;
-//     if (!this._validateCredentials(signInPacket, connection)) return;
-
-//     const accountDatabase: AccountDatabase = new AccountDatabase();
-//     const connections: Slots<Connection> = Memory.get().clientConnections;
-
-//     try {
-//       const result = await accountDatabase.findAccountByEmail(signInPacket.email);
-
-//       if (!this._validateAccount(result, connection)) return;
-//       if (this._isAccountLogged(signInPacket.email, connections)) return;
-
-//       const existingConnection = connections.get(connection.id);
-
-//       if (existingConnection) {
-//         existingConnection.account = new Account(result!.id, result!.name, result!.email, result!.enabled);
-//         existingConnection.logged = true;
-//       }
-
-//       signInPacket.send(connection);
-//     } catch (error) {
-//       new AlertMessage("Ops! o email informado não é válido!").send(connection);
-//       return;
-//     }
-//   }
-
-//   private _validateVersion(packet: SigInMessage, connection: Connection): boolean {
-//     if (packet.major !== MajorVersion || packet.minor !== MinorVersion || packet.revision !== RevisionVersion) {
-//       new AlertMessage("Ops! o cliente está desatualizado!").send(connection);
-//       return false;
-//     }
-//     return true;
-//   }
-
-//   private _validateCredentials(packet: SigInMessage, connection: Connection): boolean {
-//     if (packet.email.length < EmailMinLength) {
-//       new AlertMessage("Ops! o email informado é muito pequeno!").send(connection);
-//       return false;
-//     }
-
-//     if (packet.password.length < PasswordMinLength) {
-//       new AlertMessage("Ops! a senha informada é muito pequena!").send(connection);
-//       return false;
-//     }
-
-//     return true;
-//   }
-
-//   private _validateAccount(result: any, connection: Connection): boolean {
-//     if (result == null) {
-//       new AlertMessage("Ops! o email informado não pertence a um usuário cadastrado!").send(connection);
-//       return false;
-//     }
-
-//     if (!result.enabled) {
-//       new AlertMessage("Ops! a sua conta foi desativada, entre em contato com o suporte para mais detalhes.").send(
-//         connection
-//       );
-//       return false;
-//     }
-
-//     return true;
-//   }
-
-//   private _isAccountLogged(email: string, connections: Slots<Connection>): boolean {
-//     for (const conn of connections.getFilledSlotsAsList()) {
-//       if (conn?.logged && conn.account?.email === email) {
-//         new AlertMessage("Ops! a sua conta já está conectada!").send(conn);
-
-//         conn.disconnect();
-//         return true;
-//       }
-//     }
-//     return false;
-//   }
-// }

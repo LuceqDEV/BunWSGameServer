@@ -1,7 +1,7 @@
 import type { ServerWebSocket } from "bun";
 import { Logger } from "../../shared/logger";
 import { Memory } from "../../server/memory";
-import { Processor } from "./processor";
+import { Processor, type MessageMap } from "./processor";
 import { Connection } from "../../game/connection";
 import { Packet } from "../packets/packet";
 import { IpConverter } from "../../shared/ipconverter";
@@ -19,14 +19,14 @@ export class Handler {
   private logger: Logger = Logger.get();
   private memory: Memory = Memory.get();
 
-  private messageMap = {
-    [ClientHeaders.ping]: PingMessage,
-    [ClientHeaders.signIn]: SignInMessage,
-    [ClientHeaders.signUp]: SignUpMessage,
-    [ClientHeaders.characters]: CharacterMessage,
-    [ClientHeaders.createCharacter]: CreateCharacterMessage,
-    [ClientHeaders.deleteCharacter]: DeleteCharacterMessage,
-    [ClientHeaders.useCharacter]: UseCharacterMessage,
+  private messageMap: MessageMap = {
+    [ClientHeaders.ping]: () => new PingMessage(),
+    [ClientHeaders.signIn]: () => new SignInMessage(),
+    [ClientHeaders.signUp]: () => new SignUpMessage(),
+    [ClientHeaders.characters]: () => new CharacterMessage(),
+    [ClientHeaders.createCharacter]: () => new CreateCharacterMessage(),
+    [ClientHeaders.deleteCharacter]: () => new DeleteCharacterMessage(),
+    [ClientHeaders.useCharacter]: () => new UseCharacterMessage(),
   };
 
   private packetProcessor: Processor = new Processor(this.messageMap);

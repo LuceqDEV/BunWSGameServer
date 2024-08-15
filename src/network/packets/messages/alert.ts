@@ -13,6 +13,10 @@ export class AlertMessage extends Message<AlertMessage> {
     this.message = message;
   }
 
+  public clean(): void {
+    this.message = "";
+  }
+
   public fromPacket(packet: Packet): AlertMessage {
     const byteBuffer = new ByteBuffer(packet.content);
     const message = byteBuffer.getString();
