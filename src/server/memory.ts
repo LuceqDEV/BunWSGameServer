@@ -21,13 +21,4 @@ export class Memory {
     }
     return Memory._instance;
   }
-
-  public getConnectionBySocket(ws: ServerWebSocket): Connection | undefined {
-    for (const connection of this.clientConnections.getFilledSlotsAsList()) {
-      if (connection && connection.ws === ws) {
-        return connection;
-      }
-    }
-    return undefined;
-  }
 }

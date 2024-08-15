@@ -1,30 +1,29 @@
+import type { Connection } from "../../../game/connection";
 import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
 import { Sender } from "../../handler/sender";
-import type { Connection } from "../../../game/connection";
-import type { MessageInterface } from "../../../interfaces/message.interface";
 import { ServerHeaders } from "../headers/server.header";
+import { Message } from "../message";
 
-export class PingMessage implements MessageInterface {
-  public constructor() {}
+export class PingMessage extends Message<PingMessage> {
+  constructor() {
+    super(ServerHeaders.ping);
+  }
 
-  fromPacket(packet: Packet): PingMessage {
+  public fromPacket(_packet: Packet): PingMessage {
     return new PingMessage();
   }
 
-  toPacket(): Packet {
+  public toPacket(): Packet {
     const byteBuffer = new ByteBuffer();
-    return new Packet(ServerHeaders.ping, byteBuffer.getBuffer());
+    return new Packet(this.getPacketId(), byteBuffer.getBuffer());
   }
 
-  send(connection: Connection): void {
-    const pingPacket = this.toPacket();
-    console.log("enviando o ping");
-    Sender.dataTo(connection, pingPacket);
+  protected sendPacket(connection: Connection, packet: Packet): void {
+    Sender.dataTo(connection, packet);
   }
 
-  handle(connection: Connection, packet: Packet): void {
-    console.log("processando ping");
+  public handle(connection: Connection, _packet: Packet): void {
     this.send(connection);
   }
 }

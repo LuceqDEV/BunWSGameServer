@@ -8,12 +8,6 @@ export class Setup {
   private _logger: Logger;
   private _handler: Handler;
 
-  private _websocketHandlers: {
-    open: (ws: ServerWebSocket) => void;
-    close: (ws: ServerWebSocket, code: number, message: string) => void;
-    message: (ws: ServerWebSocket, message: Buffer) => void;
-  };
-
   constructor() {
     this._logger = Logger.get();
     this._handler = new Handler();
@@ -26,6 +20,12 @@ export class Setup {
     };
   }
 
+  private _websocketHandlers: {
+    open: (ws: ServerWebSocket) => void;
+    close: (ws: ServerWebSocket, code: number, message: string) => void;
+    message: (ws: ServerWebSocket, message: Buffer) => void;
+  };
+
   public async start(): Promise<void> {
     try {
       Bun.serve({
@@ -34,19 +34,20 @@ export class Setup {
         websocket: this._websocketHandlers,
       });
 
-      this._logger.info("Servidor iniciado com sucesso");
-      this._logger.info("Servidor ouvindo em: " + ServerPort);
+      this._logger.info("Server started successfully");
+      this._logger.info("Server listening on: " + ServerPort);
 
+      this._logger.info("Initializing server memory...");
       await this._loadMemory();
 
-      this._logger.info("Aguardando conexões...");
+      this._logger.info("Waiting for connections...");
     } catch (error) {
-      this._logger.error("Falha ao iniciar o servidor: " + error);
+      this._logger.error("Failed to start the server: " + error);
     }
   }
 
   private async _fetchHandler(req: Request, server: Server): Promise<Response> {
-    if (req.headers.get("upgrade") === "websocket") {
+    if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
       const success: boolean = server.upgrade(req);
 
       if (!success) {
@@ -58,12 +59,12 @@ export class Setup {
   }
 
   private _websocketOpen(ws: ServerWebSocket): void {
-    this._logger.info("Nova conexão de: " + IpConverter.getIPv4(ws.remoteAddress));
+    this._logger.info("New connection from: " + IpConverter.getIPv4(ws.remoteAddress));
     this._handler.websocketOpen(ws);
   }
 
   private _websocketClose(ws: ServerWebSocket, code: number, message: string): void {
-    this._logger.info("Connexão finalizada, conexão: " + IpConverter.getIPv4(ws.remoteAddress));
+    this._logger.info("Connection closed, address: " + IpConverter.getIPv4(ws.remoteAddress));
     this._handler.websocketClose(ws, code, message);
   }
 

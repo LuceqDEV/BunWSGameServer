@@ -2,34 +2,34 @@ import type { ServerWebSocket } from "bun";
 import { Logger } from "../../shared/logger";
 import { Memory } from "../../server/memory";
 import { Processor } from "./processor";
-import { ClientHeaders } from "../packets/headers/client.header";
-import { PingMessage } from "../packets/messages/ping";
-import { ChatMessage } from "../packets/messages/chat";
 import { Connection } from "../../game/connection";
-import { ByteBuffer } from "../buffers/byte.buffer";
 import { Packet } from "../packets/packet";
 import { IpConverter } from "../../shared/ipconverter";
 import { AlertMessage } from "../packets/messages/alert";
-import { SigInMessage } from "../packets/messages/signin";
+import { ClientHeaders } from "../packets/headers/client.header";
+import { PingMessage } from "../packets/messages/ping";
+import { SignInMessage } from "../packets/messages/signin";
+import { SignUpMessage } from "../packets/messages/signup";
+import { CharacterMessage } from "../packets/messages/characters";
+import { CreateCharacterMessage } from "../packets/messages/create_character";
+import { DeleteCharacterMessage } from "../packets/messages/delete_character";
+import { UseCharacterMessage } from "../packets/messages/use_character";
 
 export class Handler {
   private _logger: Logger = Logger.get();
   private _memory: Memory = Memory.get();
-  private _packetProcessor: Processor = new Processor();
 
-  constructor() {
-    this._packetProcessor.registerMessage(ClientHeaders.ping, (connection, packet) => {
-      return new PingMessage().handle(connection, packet);
-    });
+  private messageMap = {
+    [ClientHeaders.ping]: PingMessage,
+    [ClientHeaders.signIn]: SignInMessage,
+    [ClientHeaders.signUp]: SignUpMessage,
+    [ClientHeaders.characters]: CharacterMessage,
+    [ClientHeaders.createCharacter]: CreateCharacterMessage,
+    [ClientHeaders.deleteCharacter]: DeleteCharacterMessage,
+    [ClientHeaders.useCharacter]: UseCharacterMessage,
+  };
 
-    this._packetProcessor.registerMessage(ClientHeaders.chat, (connection, packet) => {
-      return new ChatMessage().handle(connection, packet);
-    });
-
-    this._packetProcessor.registerMessage(ClientHeaders.signIn, (connection, packet) => {
-      return new SigInMessage().handle(connection, packet);
-    });
-  }
+  private _packetProcessor: Processor = new Processor(this.messageMap);
 
   public websocketOpen(ws: ServerWebSocket): void {
     const firstAvailableId: number | undefined = this._memory.clientConnections.getFirstEmptySlot();
@@ -49,19 +49,19 @@ export class Handler {
   }
 
   public websocketMessage(ws: ServerWebSocket, message: Buffer): void {
-    try {
-      const connection = this._memory.getConnectionBySocket(ws);
+    const connection: Connection | undefined = this._getConnectionBySocket(ws);
 
-      if (connection) {
-        const byteBuffer = new ByteBuffer(message);
-        const packet = Packet.fromByteBuffer(byteBuffer);
-        this._packetProcessor.processMessage(connection, packet);
-      } else {
-        this._logger.error(`Conexão não encontrada para o WebSocket.`);
-        this._cleanupConnection(ws);
-      }
+    if (!connection) {
+      this._logger.error(`Conexão não encontrada para o WebSocket.`);
+      this._cleanupConnection(ws);
+      return;
+    }
+
+    try {
+      const packet = Packet.fromBuffer(message);
+      this._packetProcessor.processMessage(connection, packet);
     } catch (error) {
-      this._logger.error(`Erro ao processar mensagem WebSocket: ${error}`);
+      this._logger.error(`Erro ao processar pacote: ${error}`);
       this._cleanupConnection(ws);
     }
   }
@@ -79,12 +79,21 @@ export class Handler {
   }
 
   private _cleanupConnection(ws: ServerWebSocket): void {
-    const connection = this._memory.getConnectionBySocket(ws);
+    const connection = this._getConnectionBySocket(ws);
 
     if (connection) {
       this._memory.clientConnections.remove(connection.id);
       this._logger.info(`Conexão removida, endereço: ${IpConverter.getIPv4(ws.remoteAddress)}`);
       connection.disconnect();
     }
+  }
+
+  private _getConnectionBySocket(ws: ServerWebSocket): Connection | undefined {
+    for (const connection of this._memory.clientConnections.getFilledSlotsAsList()) {
+      if (connection && connection.ws === ws) {
+        return connection;
+      }
+    }
+    return undefined;
   }
 }

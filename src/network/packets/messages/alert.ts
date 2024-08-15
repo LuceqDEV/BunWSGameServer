@@ -2,32 +2,32 @@ import { ByteBuffer } from "../../buffers/byte.buffer";
 import { Packet } from "../packet";
 import { Sender } from "../../handler/sender";
 import type { Connection } from "../../../game/connection";
-import type { MessageInterface } from "../../../interfaces/message.interface";
 import { ServerHeaders } from "../headers/server.header";
+import { Message } from "../message";
 
-export class AlertMessage implements MessageInterface {
-  public constructor(private message: string) {}
+export class AlertMessage extends Message<AlertMessage> {
+  private message: string;
 
-  fromPacket(packet: Packet): AlertMessage {
+  constructor(message: string) {
+    super(ServerHeaders.alert);
+    this.message = message;
+  }
+
+  public fromPacket(packet: Packet): AlertMessage {
     const byteBuffer = new ByteBuffer(packet.content);
-    const message: string = byteBuffer.getString();
-
+    const message = byteBuffer.getString();
     return new AlertMessage(message);
   }
 
-  toPacket(): Packet {
+  public toPacket(): Packet {
     const byteBuffer = new ByteBuffer();
     byteBuffer.putString(this.message);
-
-    return new Packet(ServerHeaders.alert, byteBuffer.getBuffer());
+    return new Packet(this.getPacketId(), byteBuffer.getBuffer());
   }
 
-  send(connection: Connection): void {
-    Sender.dataToAllExcept(connection, this.toPacket());
+  protected sendPacket(connection: Connection, packet: Packet): void {
+    Sender.dataTo(connection, packet);
   }
 
-  handle(connection: Connection, packet: Packet): void {
-    const alertPacket = this.fromPacket(packet);
-    alertPacket.send(connection);
-  }
+  public handle(_connection: Connection, _packet: Packet): void {}
 }
