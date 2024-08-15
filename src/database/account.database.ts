@@ -3,16 +3,16 @@ import { Password } from "../shared/password";
 import { EmailUtils } from "../../utils/email.utils";
 
 export class AccountDatabase {
-  _prisma: PrismaClient;
-  _password: Password;
+  prisma: PrismaClient;
+  password: Password;
 
   constructor() {
-    this._prisma = new PrismaClient();
-    this._password = new Password();
+    this.prisma = new PrismaClient();
+    this.password = new Password();
   }
 
   public async findAccountById(id: number) {
-    return await this._prisma.accounts.findUnique({
+    return await this.prisma.accounts.findUnique({
       where: { id: id },
     });
   }
@@ -22,7 +22,7 @@ export class AccountDatabase {
       throw "Ops! o email informado não é válido!";
     }
 
-    return await this._prisma.accounts.findUnique({
+    return await this.prisma.accounts.findUnique({
       where: { email: email },
     });
   }
@@ -40,10 +40,10 @@ export class AccountDatabase {
       throw "A senha deve ter pelo menos 6 caracteres.";
     }
 
-    const hashedPassword = await this._password.hashPassword(password);
+    const hashedPassword = await this.password.hashPassword(password);
 
     try {
-      await this._prisma.accounts.create({
+      await this.prisma.accounts.create({
         data: {
           name: name,
           email: email,
@@ -73,7 +73,7 @@ export class AccountDatabase {
       throw "Conta não encontrada.";
     }
 
-    const passwordMatch = await this._password.verifyPassword(password, account.password!);
+    const passwordMatch = await this.password.verifyPassword(password, account.password!);
 
     if (!passwordMatch) {
       throw "Senha incorreta.";

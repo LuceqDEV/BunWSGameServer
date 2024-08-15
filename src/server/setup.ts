@@ -1,26 +1,26 @@
 import type { Server, ServerWebSocket } from "bun";
-import { ServerPort } from "../shared/constants";
+import { SERVER_PORT } from "../shared/constants";
 import { Logger } from "../shared/logger";
 import { IpConverter } from "../shared/ipconverter";
 import { Handler } from "../network/handler/handler";
 
 export class Setup {
-  private _logger: Logger;
-  private _handler: Handler;
+  private logger: Logger;
+  private handler: Handler;
 
   constructor() {
-    this._logger = Logger.get();
-    this._handler = new Handler();
-    this._fetchHandler = this._fetchHandler.bind(this);
+    this.logger = Logger.get();
+    this.handler = new Handler();
+    this.fetchHandler = this.fetchHandler.bind(this);
 
-    this._websocketHandlers = {
-      open: this._websocketOpen.bind(this),
-      close: this._websocketClose.bind(this),
-      message: this._websocketMessage.bind(this),
+    this.websocketHandlers = {
+      open: this.websocketOpen.bind(this),
+      close: this.websocketClose.bind(this),
+      message: this.websocketMessage.bind(this),
     };
   }
 
-  private _websocketHandlers: {
+  private websocketHandlers: {
     open: (ws: ServerWebSocket) => void;
     close: (ws: ServerWebSocket, code: number, message: string) => void;
     message: (ws: ServerWebSocket, message: Buffer) => void;
@@ -29,24 +29,24 @@ export class Setup {
   public async start(): Promise<void> {
     try {
       Bun.serve({
-        port: ServerPort,
-        fetch: this._fetchHandler,
-        websocket: this._websocketHandlers,
+        port: SERVER_PORT,
+        fetch: this.fetchHandler,
+        websocket: this.websocketHandlers,
       });
 
-      this._logger.info("Server started successfully");
-      this._logger.info("Server listening on: " + ServerPort);
+      this.logger.info("Server started successfully");
+      this.logger.info("Server listening on: " + SERVER_PORT);
 
-      this._logger.info("Initializing server memory...");
-      await this._loadMemory();
+      this.logger.info("Initializing server memory...");
+      await this.loadMemory();
 
-      this._logger.info("Waiting for connections...");
+      this.logger.info("Waiting for connections...");
     } catch (error) {
-      this._logger.error("Failed to start the server: " + error);
+      this.logger.error("Failed to start the server: " + error);
     }
   }
 
-  private async _fetchHandler(req: Request, server: Server): Promise<Response> {
+  private async fetchHandler(req: Request, server: Server): Promise<Response> {
     if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
       const success: boolean = server.upgrade(req);
 
@@ -58,19 +58,19 @@ export class Setup {
     return new Response("Hello, world!", { status: 200 });
   }
 
-  private _websocketOpen(ws: ServerWebSocket): void {
-    this._logger.info("New connection from: " + IpConverter.getIPv4(ws.remoteAddress));
-    this._handler.websocketOpen(ws);
+  private websocketOpen(ws: ServerWebSocket): void {
+    this.logger.info("New connection from: " + IpConverter.getIPv4(ws.remoteAddress));
+    this.handler.websocketOpen(ws);
   }
 
-  private _websocketClose(ws: ServerWebSocket, code: number, message: string): void {
-    this._logger.info("Connection closed, address: " + IpConverter.getIPv4(ws.remoteAddress));
-    this._handler.websocketClose(ws, code, message);
+  private websocketClose(ws: ServerWebSocket, code: number, message: string): void {
+    this.logger.info("Connection closed, address: " + IpConverter.getIPv4(ws.remoteAddress));
+    this.handler.websocketClose(ws, code, message);
   }
 
-  private _websocketMessage(ws: ServerWebSocket, message: Buffer): void {
-    this._handler.websocketMessage(ws, message);
+  private websocketMessage(ws: ServerWebSocket, message: Buffer): void {
+    this.handler.websocketMessage(ws, message);
   }
 
-  private async _loadMemory(): Promise<void> {}
+  private async loadMemory(): Promise<void> {}
 }

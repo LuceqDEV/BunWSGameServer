@@ -1,18 +1,18 @@
 export class ByteBuffer {
-  private _buffer: Buffer;
-  private _offset: number;
+  private buffer: Buffer;
+  private offset: number;
 
   constructor(initialBuffer: Buffer = Buffer.alloc(0)) {
-    this._buffer = initialBuffer;
-    this._offset = 0;
+    this.buffer = initialBuffer;
+    this.offset = 0;
   }
 
   public putBytes(bytes: Buffer): void {
-    const newSize = this._buffer.length + bytes.length;
+    const newSize = this.buffer.length + bytes.length;
     const newBuffer = Buffer.alloc(newSize);
-    this._buffer.copy(newBuffer);
-    bytes.copy(newBuffer, this._buffer.length);
-    this._buffer = newBuffer;
+    this.buffer.copy(newBuffer);
+    bytes.copy(newBuffer, this.buffer.length);
+    this.buffer = newBuffer;
   }
 
   public putInt8(value: number): void {
@@ -40,45 +40,45 @@ export class ByteBuffer {
   }
 
   public getInt8(): number {
-    const value = this._buffer.readInt8(this._offset);
-    this._offset += 1;
+    const value = this.buffer.readInt8(this.offset);
+    this.offset += 1;
     return value;
   }
 
   public getInt16(): number {
-    const value = this._buffer.readInt16LE(this._offset);
-    this._offset += 2;
+    const value = this.buffer.readInt16LE(this.offset);
+    this.offset += 2;
     return value;
   }
 
   public getInt32(): number {
-    const value = this._buffer.readInt32LE(this._offset);
-    this._offset += 4;
+    const value = this.buffer.readInt32LE(this.offset);
+    this.offset += 4;
     return value;
   }
 
   public getString(): string {
     const length = this.getInt32();
-    const value = this._buffer.subarray(this._offset, this._offset + length);
-    this._offset += length;
+    const value = this.buffer.subarray(this.offset, this.offset + length);
+    this.offset += length;
     return value.toString("utf8");
   }
 
   public getBytes(length: number): Buffer {
-    const value = this._buffer.subarray(this._offset, this._offset + length);
-    this._offset += length;
+    const value = this.buffer.subarray(this.offset, this.offset + length);
+    this.offset += length;
     return value;
   }
 
   public getBuffer(): Buffer {
-    return this._buffer;
+    return this.buffer;
   }
 
   public getOffset(): number {
-    return this._offset;
+    return this.offset;
   }
 
   public setOffset(offset: number): void {
-    this._offset = offset;
+    this.offset = offset;
   }
 }

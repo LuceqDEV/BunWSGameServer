@@ -1,10 +1,10 @@
-export const ServerPort: number = 8080;
-export const MaxPlayers: number = 100;
-export const MaxMaps: number = 100;
+export const SERVER_PORT: number = 8080;
+export const MAX_PLAYERS: number = 100;
+export const MAX_MAPS: number = 100;
 
-export const MajorVersion: number = 1;
-export const MinorVersion: number = 0;
-export const RevisionVersion: number = 0;
+export const MAJOR_VERSION: number = 1;
+export const MINOR_VERSION: number = 0;
+export const REVISION_VERSION: number = 0;
 
-export const EmailMinLength: number = 16;
-export const PasswordMinLength: number = 6;
+export const EMAIL_MIN_LENGTH: number = 16;
+export const PASSWORD_MIN_LENGTH: number = 6;

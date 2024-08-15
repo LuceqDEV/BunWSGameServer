@@ -2,12 +2,12 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import { AccountDatabase } from "./account.database";
 
 export class CharacterDatabase {
-  _account: AccountDatabase;
-  _prisma: PrismaClient;
+  account: AccountDatabase;
+  prisma: PrismaClient;
 
   constructor() {
-    this._account = new AccountDatabase();
-    this._prisma = new PrismaClient();
+    this.account = new AccountDatabase();
+    this.prisma = new PrismaClient();
   }
 
   public async createCharacter(name: string, mapsId: number, accountId: number): Promise<boolean> {
@@ -16,7 +16,7 @@ export class CharacterDatabase {
     }
 
     try {
-      await this._prisma.characters.create({
+      await this.prisma.characters.create({
         data: {
           name: name,
           mapsId: mapsId,
@@ -40,12 +40,12 @@ export class CharacterDatabase {
       return "ID da conta é obrigatório.";
     }
 
-    const account = await this._account.findAccountById(accountId);
+    const account = await this.account.findAccountById(accountId);
     if (!account) {
       return "Conta não encontrada.";
     }
 
-    return await this._prisma.characters.findMany({
+    return await this.prisma.characters.findMany({
       where: { accountsId: accountId },
     });
   }
@@ -55,12 +55,12 @@ export class CharacterDatabase {
       throw "ID do personagem e ID da conta são obrigatórios.";
     }
 
-    const account = await this._account.findAccountById(accountId);
+    const account = await this.account.findAccountById(accountId);
     if (!account) {
       throw "Conta não encontrada.";
     }
 
-    const character = await this._prisma.characters.findUnique({
+    const character = await this.prisma.characters.findUnique({
       where: { id: characterId },
     });
 
@@ -69,7 +69,7 @@ export class CharacterDatabase {
     }
 
     try {
-      await this._prisma.characters.delete({
+      await this.prisma.characters.delete({
         where: { id: characterId },
       });
 

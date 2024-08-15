@@ -25,10 +25,10 @@ export class Map {
     this.characters.push(character);
 
     // Notificar todos os outros jogadores sobre o novo jogador
-    this._notifyAllPlayersAboutNewCharacter(character);
+    this.notifyAllPlayersAboutNewCharacter(character);
 
     // Enviar todos os jogadores atuais para o novo jogador
-    this._sendAllCharactersToNewCharacter(character);
+    this.sendAllCharactersToNewCharacter(character);
   }
 
   public removeCharacter(character: Character): void {
@@ -36,14 +36,18 @@ export class Map {
 
     if (index !== -1) {
       this.characters.splice(index, 1);
-      this._handlePlayerLeave(character.id);
+      this.handlePlayerLeave(character.id);
     }
   }
 
   public updateCharacterPositionToAll(character: Character, position: Vector2): void {
     if (character) {
       character.lastMapPosition = position;
-      this._updateCharacterPositionToAll(character);
+
+      this.characters.forEach((char) => {
+        if (char.id !== character.id) {
+        }
+      });
     }
   }
 
@@ -51,39 +55,29 @@ export class Map {
     return character.lastMapPosition;
   }
 
-  private _sendAllCharactersToNewCharacter(character: Character): void {
+  private sendAllCharactersToNewCharacter(character: Character): void {
     // Enviar todos os jogadores atuais para o novo jogador
     this.characters.forEach((char) => {
       if (char.id !== character.id) {
-        this._notifyCharacter(character, char);
+        this.notifyCharacter(character, char);
       }
     });
   }
 
-  private _notifyAllPlayersAboutNewCharacter(character: Character): void {
+  private notifyAllPlayersAboutNewCharacter(character: Character): void {
     // Informar todos os jogadores sobre o novo jogador
     this.characters.forEach((char) => {
       if (char.id !== character.id) {
-        this._notifyCharacter(char, character);
+        this.notifyCharacter(char, character);
       }
     });
   }
 
-  private _notifyCharacter(receiver: Character, sender: Character): void {}
+  private notifyCharacter(receiver: Character, sender: Character): void {}
 
-  private _handlePlayerLeave(characterId: number): void {
+  private handlePlayerLeave(characterId: number): void {
     this.characters.forEach((char) => {
       if (char.id !== characterId) {
-        this._notifyCharacterLeave(char, characterId);
-      }
-    });
-  }
-
-  private _notifyCharacterLeave(receiver: Character, leavingCharacterId: number): void {}
-
-  private _updateCharacterPositionToAll(character: Character): void {
-    this.characters.forEach((char) => {
-      if (char.id !== character.id) {
       }
     });
   }

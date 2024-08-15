@@ -16,8 +16,8 @@ import { DeleteCharacterMessage } from "../packets/messages/delete_character";
 import { UseCharacterMessage } from "../packets/messages/use_character";
 
 export class Handler {
-  private _logger: Logger = Logger.get();
-  private _memory: Memory = Memory.get();
+  private logger: Logger = Logger.get();
+  private memory: Memory = Memory.get();
 
   private messageMap = {
     [ClientHeaders.ping]: PingMessage,
@@ -29,67 +29,67 @@ export class Handler {
     [ClientHeaders.useCharacter]: UseCharacterMessage,
   };
 
-  private _packetProcessor: Processor = new Processor(this.messageMap);
+  private packetProcessor: Processor = new Processor(this.messageMap);
 
   public websocketOpen(ws: ServerWebSocket): void {
-    const firstAvailableId: number | undefined = this._memory.clientConnections.getFirstEmptySlot();
+    const firstAvailableId: number | undefined = this.memory.clientConnections.getFirstEmptySlot();
 
     if (firstAvailableId == undefined) {
-      this._handleFullServer(ws);
+      this.handleFullServer(ws);
 
       return;
     }
 
     const connectionModel: Connection = new Connection(ws, firstAvailableId);
-    this._memory.clientConnections.add(connectionModel);
+    this.memory.clientConnections.add(connectionModel);
   }
 
   public websocketClose(ws: ServerWebSocket, _code: number, _message: string): void {
-    this._cleanupConnection(ws);
+    this.cleanupConnection(ws);
   }
 
   public websocketMessage(ws: ServerWebSocket, message: Buffer): void {
-    const connection: Connection | undefined = this._getConnectionBySocket(ws);
+    const connection: Connection | undefined = this.getConnectionBySocket(ws);
 
     if (!connection) {
-      this._logger.error(`Conexão não encontrada para o WebSocket.`);
-      this._cleanupConnection(ws);
+      this.logger.error(`Conexão não encontrada para o WebSocket.`);
+      this.cleanupConnection(ws);
       return;
     }
 
     try {
       const packet = Packet.fromBuffer(message);
-      this._packetProcessor.processMessage(connection, packet);
+      this.packetProcessor.processMessage(connection, packet);
     } catch (error) {
-      this._logger.error(`Erro ao processar pacote: ${error}`);
-      this._cleanupConnection(ws);
+      this.logger.error(`Erro ao processar pacote: ${error}`);
+      this.cleanupConnection(ws);
     }
   }
 
-  private _handleFullServer(ws: ServerWebSocket): void {
+  private handleFullServer(ws: ServerWebSocket): void {
     try {
       const connection: Connection = new Connection(ws, -1);
       new AlertMessage("O servidor está cheio, tente novamente mais tarde...").send(connection);
     } catch (error) {
-      this._logger.error("Erro ao enviar alerta para a conexão, servidor cheio.");
+      this.logger.error("Erro ao enviar alerta para a conexão, servidor cheio.");
     }
 
-    this._logger.info("O servidor está cheio, desconectando o cliente: " + IpConverter.getIPv4(ws.remoteAddress));
+    this.logger.info("O servidor está cheio, desconectando o cliente: " + IpConverter.getIPv4(ws.remoteAddress));
     ws.close();
   }
 
-  private _cleanupConnection(ws: ServerWebSocket): void {
-    const connection = this._getConnectionBySocket(ws);
+  private cleanupConnection(ws: ServerWebSocket): void {
+    const connection = this.getConnectionBySocket(ws);
 
     if (connection) {
-      this._memory.clientConnections.remove(connection.id);
-      this._logger.info(`Conexão removida, endereço: ${IpConverter.getIPv4(ws.remoteAddress)}`);
+      this.memory.clientConnections.remove(connection.id);
+      this.logger.info(`Conexão removida, endereço: ${IpConverter.getIPv4(ws.remoteAddress)}`);
       connection.disconnect();
     }
   }
 
-  private _getConnectionBySocket(ws: ServerWebSocket): Connection | undefined {
-    for (const connection of this._memory.clientConnections.getFilledSlotsAsList()) {
+  private getConnectionBySocket(ws: ServerWebSocket): Connection | undefined {
+    for (const connection of this.memory.clientConnections.getFilledSlotsAsList()) {
       if (connection && connection.ws === ws) {
         return connection;
       }

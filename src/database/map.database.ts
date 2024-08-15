@@ -1,10 +1,10 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 
 export class MapDatabase {
-  _prisma: PrismaClient;
+  prisma: PrismaClient;
 
   constructor() {
-    this._prisma = new PrismaClient();
+    this.prisma = new PrismaClient();
   }
 
   public async createMap(name: string, mapSizeX: number = 1, mapSizeY: number = 1): Promise<boolean> {
@@ -13,7 +13,7 @@ export class MapDatabase {
     }
 
     try {
-      await this._prisma.maps.create({
+      await this.prisma.maps.create({
         data: {
           name: name,
           mapSizeX: mapSizeX,
@@ -34,7 +34,7 @@ export class MapDatabase {
 
   public async listAllMaps() {
     try {
-      return await this._prisma.maps.findMany();
+      return await this.prisma.maps.findMany();
     } catch (error: any) {
       throw "Ocorreu um erro ao listar os mapas. Por favor, tente novamente.";
     }
@@ -46,7 +46,7 @@ export class MapDatabase {
     }
 
     try {
-      await this._prisma.maps.update({
+      await this.prisma.maps.update({
         where: { id: id },
         data: {
           name: name,
@@ -72,7 +72,7 @@ export class MapDatabase {
     }
 
     try {
-      await this._prisma.maps.delete({
+      await this.prisma.maps.delete({
         where: { id: id },
       });
 
