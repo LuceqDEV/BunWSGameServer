@@ -19,8 +19,4 @@ export abstract class Message<T extends Message<T>> {
   protected getPacketId(): number {
     return this.packetId;
   }
-
-  public static create(): Message<any> {
-    throw new Error("Method not implemented.");
-  }
 }

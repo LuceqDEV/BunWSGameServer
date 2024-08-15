@@ -33,10 +33,6 @@ export class SignInMessage extends Message<SignInMessage> {
     this.revision = revision;
   }
 
-  public static create(): SignInMessage {
-    return new SignInMessage();
-  }
-
   public clean(): void {
     this.email = "";
     this.password = "";
