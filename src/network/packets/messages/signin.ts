@@ -33,14 +33,6 @@ export class SignInMessage extends Message<SignInMessage> {
     this.revision = revision;
   }
 
-  public clean(): void {
-    this.email = "";
-    this.password = "";
-    this.major = 0;
-    this.minor = 0;
-    this.revision = 0;
-  }
-
   public fromPacket(packet: Packet): SignInMessage {
     const byteBuffer = new ByteBuffer(packet.content);
 

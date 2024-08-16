@@ -19,17 +19,7 @@ export class Handler {
   private logger: Logger = Logger.get();
   private memory: Memory = Memory.get();
 
-  private messageMap: MessageMap = {
-    [ClientHeaders.ping]: () => new PingMessage(),
-    [ClientHeaders.signIn]: () => new SignInMessage(),
-    [ClientHeaders.signUp]: () => new SignUpMessage(),
-    [ClientHeaders.characters]: () => new CharacterMessage(),
-    [ClientHeaders.createCharacter]: () => new CreateCharacterMessage(),
-    [ClientHeaders.deleteCharacter]: () => new DeleteCharacterMessage(),
-    [ClientHeaders.useCharacter]: () => new UseCharacterMessage(),
-  };
-
-  private packetProcessor: Processor = new Processor(this.messageMap);
+  private packetProcessor: Processor = new Processor();
 
   public websocketOpen(ws: ServerWebSocket): void {
     const firstAvailableId: number | undefined = this.memory.clientConnections.getFirstEmptySlot();

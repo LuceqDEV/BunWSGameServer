@@ -2,6 +2,9 @@ import type { Packet } from "../packets/packet";
 import type { Connection } from "../../game/connection";
 import type { Message } from "../packets/message";
 import { Logger } from "../../shared/logger";
+import { ClientHeaders } from "../packets/headers/client.header";
+import { PingMessage } from "../packets/messages/ping";
+import { SignInMessage } from "../packets/messages/signin";
 
 type MessageHandler = (connection: Connection, packet: Packet) => void;
 
@@ -13,10 +16,20 @@ export class Processor {
   private handlers: Map<number, MessageHandler> = new Map();
   private logger: Logger = Logger.get();
 
-  constructor(messageMap: MessageMap) {
-    for (const [header, createMessage] of Object.entries(messageMap)) {
-      this.registerMessage(Number(header), this.createHandler(createMessage));
-    }
+  constructor() {
+    this.registerHandlers();
+  }
+
+  private registerHandlers(): void {
+    this.registerMessage(
+      ClientHeaders.ping,
+      this.createHandler(() => new PingMessage())
+    );
+
+    this.registerMessage(
+      ClientHeaders.signIn,
+      this.createHandler(() => new SignInMessage())
+    );
   }
 
   private registerMessage(id: number, handler: MessageHandler): void {
