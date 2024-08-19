@@ -52,7 +52,6 @@ export class SignInMessage extends Message<SignInMessage> {
   }
 
   public async handle(connection: Connection, packet: Packet): Promise<void> {
-    console.log(packet.content);
     const signInPacket = this.fromPacket(packet);
 
     if (!this.validateVersion(signInPacket, connection)) return;
@@ -66,7 +65,11 @@ export class SignInMessage extends Message<SignInMessage> {
 
       if (!this.validateAccount(result, connection)) return;
 
-      this.isAccountLogged(signInPacket.email, connections);
+      var logged = this.isAccountLogged(signInPacket.email, connections, connection);
+
+      if (logged) {
+        return;
+      }
 
       const existingConnection = connections.get(connection.id);
 
@@ -74,6 +77,8 @@ export class SignInMessage extends Message<SignInMessage> {
         existingConnection.account = new Account(result!.id, result!.name, result!.email, result!.enabled);
         existingConnection.logged = true;
       }
+
+      new AlertMessage("Acessando sua conta...").send(connection);
 
       signInPacket.send(connection);
     } catch (error) {
@@ -124,12 +129,16 @@ export class SignInMessage extends Message<SignInMessage> {
     return true;
   }
 
-  private isAccountLogged(email: string, connections: Slots<Connection>): void {
-    for (const conn of connections.getFilledSlotsAsList()) {
-      if (conn?.logged && conn.account?.email === email) {
-        new AlertMessage("Ops! a sua conta já está conectada em outro local! Desconectando...").send(conn);
-        conn.disconnect();
+  private isAccountLogged(email: string, connections: Slots<Connection>, newConnection: Connection): boolean {
+    for (const connection of connections.getFilledSlotsAsList()) {
+      if (connection?.logged && connection.account?.email === email) {
+        new AlertMessage("Ops! alguém tentou acessar sua conta em outro dispositivo...", true).send(connection);
+        new AlertMessage("Ops! a sua conta já estava conectada! Considere trocar sua senha...").send(newConnection);
+
+        return true;
       }
     }
+
+    return false;
   }
 }

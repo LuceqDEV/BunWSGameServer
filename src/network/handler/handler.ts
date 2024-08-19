@@ -1,19 +1,11 @@
 import type { ServerWebSocket } from "bun";
 import { Logger } from "../../shared/logger";
 import { Memory } from "../../server/memory";
-import { Processor, type MessageMap } from "./processor";
 import { Connection } from "../../game/connection";
 import { Packet } from "../packets/packet";
 import { IpConverter } from "../../shared/ipconverter";
 import { AlertMessage } from "../packets/messages/alert";
-import { ClientHeaders } from "../packets/headers/client.header";
-import { PingMessage } from "../packets/messages/ping";
-import { SignInMessage } from "../packets/messages/signin";
-import { SignUpMessage } from "../packets/messages/signup";
-import { CharacterMessage } from "../packets/messages/characters";
-import { CreateCharacterMessage } from "../packets/messages/create_character";
-import { DeleteCharacterMessage } from "../packets/messages/delete_character";
-import { UseCharacterMessage } from "../packets/messages/use_character";
+import { Processor } from "./processor";
 
 export class Handler {
   private logger: Logger = Logger.get();

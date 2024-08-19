@@ -7,25 +7,25 @@ import { Message } from "../message";
 
 export class AlertMessage extends Message<AlertMessage> {
   private message: string;
+  private disconnect: boolean;
 
-  constructor(message: string) {
+  constructor(message: string, disconnect: boolean = false) {
     super(ServerHeaders.alert);
     this.message = message;
-  }
-
-  public clean(): void {
-    this.message = "";
+    this.disconnect = disconnect;
   }
 
   public fromPacket(packet: Packet): AlertMessage {
     const byteBuffer = new ByteBuffer(packet.content);
     const message = byteBuffer.getString();
-    return new AlertMessage(message);
+    const disconnect = byteBuffer.getInt8();
+    return new AlertMessage(message, disconnect === 1);
   }
 
   public toPacket(): Packet {
     const byteBuffer = new ByteBuffer();
     byteBuffer.putString(this.message);
+    byteBuffer.putInt8(this.disconnect ? 1 : 0);
     return new Packet(this.getPacketId(), byteBuffer.getBuffer());
   }
 
