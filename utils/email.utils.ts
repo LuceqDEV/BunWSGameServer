@@ -1,6 +1,6 @@
 export class EmailUtils {
-  public static isValidEmail(email: string) {
+  public static isInvalidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return !emailRegex.test(email);
   }
 }

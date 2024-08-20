@@ -25,7 +25,7 @@ export class SignInMessage extends Message<SignInMessage> {
   private revision: number;
 
   constructor(email: string = "", password: string = "", major: number = 0, minor: number = 0, revision: number = 0) {
-    super(ServerHeaders.signIn);
+    super(ServerHeaders.AccessAccount);
     this.email = email;
     this.password = password;
     this.major = major;

@@ -8,3 +8,4 @@ export const REVISION_VERSION: number = 0;
 
 export const EMAIL_MIN_LENGTH: number = 16;
 export const PASSWORD_MIN_LENGTH: number = 6;
+export const NAME_MIN_LENGTH: number = 4;

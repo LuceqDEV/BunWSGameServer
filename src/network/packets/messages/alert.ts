@@ -10,7 +10,7 @@ export class AlertMessage extends Message<AlertMessage> {
   private disconnect: boolean;
 
   constructor(message: string, disconnect: boolean = false) {
-    super(ServerHeaders.alert);
+    super(ServerHeaders.Alert);
     this.message = message;
     this.disconnect = disconnect;
   }

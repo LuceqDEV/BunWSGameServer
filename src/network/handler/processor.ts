@@ -22,12 +22,12 @@ export class Processor {
 
   private registerHandlers(): void {
     this.registerMessage(
-      ClientHeaders.ping,
+      ClientHeaders.Ping,
       this.createHandler(() => new PingMessage())
     );
 
     this.registerMessage(
-      ClientHeaders.signIn,
+      ClientHeaders.AccessAccount,
       this.createHandler(() => new SignInMessage())
     );
   }

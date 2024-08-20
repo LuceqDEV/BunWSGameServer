@@ -7,7 +7,7 @@ import { Message } from "../message";
 
 export class PingMessage extends Message<PingMessage> {
   constructor() {
-    super(ServerHeaders.ping);
+    super(ServerHeaders.Ping);
   }
 
   public fromPacket(_packet: Packet): PingMessage {
